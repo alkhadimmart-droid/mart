@@ -3,27 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Al Khadim Mart - Customer Portal</title>
+    <title>Al Khadim Mart - VIP Customer Order Portal</title>
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #0f172a; margin: 0; padding: 15px; color: #f8fafc; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #0f172a; margin: 0; padding: 15px; color: #f8fafc; padding-bottom: 100px; }
         .header-card { background: linear-gradient(135deg, #0284c7, #0f172a); padding: 20px; border-radius: 15px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); margin-bottom: 20px; position: relative; }
         h1 { margin: 0; font-size: 24px; color: white; }
         p { margin: 5px 0 0 0; color: #bae6fd; font-size: 14px; }
         .lang-btn { background: #f59e0b; color: #0f172a; font-weight: bold; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; position: absolute; top: 15px; right: 15px; font-size: 12px; }
-        .search-box { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid #334155; background: #1e293b; color: white; font-size: 16px; box-sizing: border-box; margin-bottom: 15px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
+        .search-box { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid #334155; background: #1e293b; color: white; font-size: 16px; box-sizing: border-box; margin-bottom: 15px; }
         .product-list { display: flex; flex-direction: column; gap: 12px; }
-        .product-card { background: #1e293b; padding: 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.15); border-left: 5px solid #38bdf8; transition: 0.2s; }
+        .product-card { background: #1e293b; padding: 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #38bdf8; }
         .product-details h3 { margin: 0 0 5px 0; font-size: 18px; color: #f1f5f9; }
         .product-details span { font-size: 13px; color: #94a3b8; }
-        .price-tag { background: #10b981; color: white; padding: 8px 15px; border-radius: 8px; font-weight: bold; font-size: 16px; text-align: right; }
-        .out-of-stock { border-left-color: #ef4444 !important; opacity: 0.6; }
-        .out-of-stock .price-tag { background: #ef4444 !important; font-size: 12px; }
+        .right-side { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+        .price-tag { background: #10b981; color: white; padding: 5px 10px; border-radius: 6px; font-weight: bold; font-size: 15px; }
+        .buy-btn { background: #38bdf8; color: #0f172a; border: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; display: block; }
+        .buy-btn:hover { background: #0ea5e9; }
         
-        /* RTL settings for Urdu */
+        /* Bottom Order Bar */
+        .cart-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #1e293b; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-top: 3px solid #10b981; box-shadow: 0 -4px 10px rgba(0,0,0,0.5); z-index: 1000; }
+        .whatsapp-btn { background: #25d366; color: white; border: none; padding: 12px 25px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .whatsapp-btn:hover { background: #20ba5a; }
+        
+        .out-of-stock { border-left-color: #ef4444 !important; opacity: 0.6; }
+        .out-of-stock .price-tag { background: #ef4444 !important; }
+        
+        /* RTL for Urdu */
         .rtl { direction: rtl; text-align: right; }
         .rtl .lang-btn { right: auto; left: 15px; }
         .rtl .product-card { border-left: none; border-right: 5px solid #38bdf8; }
         .rtl .out-of-stock { border-right-color: #ef4444 !important; }
+        .rtl .right-side { text-align: left; align-items: flex-start; }
     </style>
 </head>
 <body>
@@ -31,20 +41,30 @@
     <div class="header-card" id="headerArea">
         <button class="lang-btn" onclick="toggleLanguage()" id="langBtn">اردو کریں</button>
         <h1 id="txtTitle">Al Khadim Brothers Wholesale Mart</h1>
-        <p id="txtSubTitle">Live Digital Price List & Stock Status</p>
+        <p id="txtSubTitle">Select Items & Order Directly on WhatsApp</p>
     </div>
 
     <input type="text" id="searchInput" class="search-box" placeholder="🔍 Search item name or code..." oninput="filterProducts()">
 
-    <div class="product-list" id="productsContainer">
+    <div class="product-list" id="productsContainer"></div>
+
+    <div class="cart-bar" id="cartBar">
+        <div>
+            <span id="lblTotalItems" style="color: #94a3b8; font-size: 14px;">Items: 0</span>
+            <div style="font-size: 20px; font-weight: bold; color: #10b981;">Rs. <span id="lblTotalAmount">0</span></div>
         </div>
+        <button class="whatsapp-btn" onclick="sendWhatsAppOrder()">
+            💬 <span id="lblOrderBtn">Order on WhatsApp</span>
+        </button>
+    </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 
 <script>
+    // ⚠️ YAHAAN APNI ASLI FIREBASE SETTINGS BHI DALEIN
     const firebaseConfig = {
-        apiKey: "AIzaSyBzeLfXKCD-yp22eXJeUJqqGAgexq-tGvo", // 👈 Apni asli key yahan mita kar lagayein
+        apiKey: "AIzaSyBzeLfXKCD-yp22eXJeUJqqGAgexq-tGvo", 
         authDomain: "al-khadim-mart.firebaseapp.com",
         databaseURL: "https://al-khadim-mart-default-rtdb.firebaseio.com/",
         projectId: "al-khadim-mart",
@@ -53,37 +73,44 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    // ⚠️ APNA ASLI WHATSAPP NUMBER YAHAAN LIKHEIN (92 Se Shuru Karein)
+    const MY_WHATSAPP_NUMBER = "923452981791"; 
+
     let allProducts = {};
+    let cart = {};
     let currentLang = "en";
 
     const langData = {
         en: {
             title: "Al Khadim Brothers Wholesale Mart",
-            sub: "Live Digital Price List & Stock Status",
+            sub: "Select Items & Order Directly on WhatsApp",
             search: "🔍 Search item name or code...",
             btn: "اردو کریں",
             code: "Code: #",
             available: "In Stock",
-            notAvailable: "Out of Stock"
+            notAvailable: "Out of Stock",
+            addBtn: "🛒 Add to Cart",
+            totalItems: "Total Items: ",
+            orderBtn: "Send WhatsApp Order"
         },
         ur: {
             title: "الخادم برادرز ہول سیل مارٹ",
-            sub: "لائیو ڈیجیٹل ریٹ لسٹ اور اسٹاک کی صورتحال",
+            sub: "سودا سلف منتخب کریں اور براہِ راست واٹس ایپ پر آرڈر بھیجیں",
             search: "🔍 سامان کا نام یا کوڈ تلاش کریں...",
             btn: "English",
             code: "آئٹم کوڈ: #",
             available: "اسٹاک میں موجود ہے",
-            notAvailable: "ختم ہو گیا ہے"
+            notAvailable: "ختم ہو گیا ہے",
+            addBtn: "🛒 ٹوکری میں ڈالیں",
+            totalItems: "کل سامان: ",
+            orderBtn: "واٹس ایپ پر آرڈر بھیجیں"
         }
     };
 
-    // Realtime Database se data uthana
     db.ref('products_inventory').on('value', (snapshot) => {
         if(snapshot.exists()) {
             allProducts = snapshot.val();
             displayProducts();
-        } else {
-            document.getElementById("productsContainer").innerHTML = "<p style='text-align:center;'>No products available.</p>";
         }
     });
 
@@ -95,14 +122,15 @@
 
         for(let code in allProducts) {
             let p = allProducts[code];
-            let name = p.name.toLowerCase();
-            
-            // Search filter check
-            if(name.includes(searchTxt) || code.includes(searchTxt)) {
+            if(p.name.toLowerCase().includes(searchTxt) || code.includes(searchTxt)) {
                 let isAvailable = (p.stock && p.stock > 0);
                 let stockStatusText = isAvailable ? `${p.stock} ${lang.available}` : lang.notAvailable;
                 let cardClass = isAvailable ? "product-card" : "product-card out-of-stock";
-                let priceDisplay = isAvailable ? `Rs. ${p.sale}` : (currentLang === "en" ? "SOLD OUT" : "ختم");
+                
+                let qtyInCart = cart[code] ? cart[code].qty : 0;
+                let actionButton = isAvailable 
+                    ? `<button class="buy-btn" onclick="addToCart('${code}')">${lang.addBtn} ${qtyInCart > 0 ? '('+qtyInCart+')' : ''}</button>` 
+                    : `<span style="color:#ef4444; font-size:12px; font-weight:bold;">${lang.notAvailable}</span>`;
 
                 container.innerHTML += `
                     <div class="${cardClass}">
@@ -110,8 +138,9 @@
                             <h3>${p.name}</h3>
                             <span>${lang.code}${code} | ${stockStatusText}</span>
                         </div>
-                        <div class="price-tag">
-                            ${priceDisplay}
+                        <div class="right-side">
+                            <div class="price-tag">Rs. ${p.sale}</div>
+                            ${actionButton}
                         </div>
                     </div>
                 `;
@@ -119,29 +148,89 @@
         }
     }
 
-    function filterProducts() {
+    function addToCart(code) {
+        let p = allProducts[code];
+        if (cart[code]) {
+            if(cart[code].qty < p.stock) {
+                cart[code].qty++;
+            } else {
+                alert("اس سے زیادہ اسٹاک دکان میں موجود نہیں ہے!");
+            }
+        } else {
+            cart[code] = { name: p.name, sale: p.sale, qty: 1 };
+        }
+        updateCartBar();
         displayProducts();
     }
+
+    function updateCartBar() {
+        let totalQty = 0;
+        let totalAmount = 0;
+        let lang = langData[currentLang];
+
+        for (let code in cart) {
+            totalQty += cart[code].qty;
+            totalAmount += (cart[code].sale * cart[code].qty);
+        }
+
+        document.getElementById("lblTotalItems").innerText = lang.totalItems + totalQty;
+        document.getElementById("lblTotalAmount").innerText = totalAmount.toLocaleString();
+    }
+
+    function sendWhatsAppOrder() {
+        if (Object.keys(cart).length === 0) {
+            return alert(currentLang === "en" ? "Your cart is empty!" : "آپ کی ٹوکری خالی ہے!");
+        }
+
+        let message = `*--- NEW ORDER: AL KHADIM MART ---*\n\n`;
+        let totalAmount = 0;
+        let count = 1;
+
+        for (let code in cart) {
+            let item = cart[code];
+            let itemTotal = item.sale * item.qty;
+            totalAmount += itemTotal;
+            message += `${count}) *${item.name}*\n     Qty: ${item.qty} x Rs.${item.sale} = *Rs.${itemTotal}*\n`;
+            count++;
+        }
+
+        message += `\n-----------------------------------\n`;
+        message += `*TOTAL BILL: Rs. ${totalAmount}*\n`;
+        message += `-----------------------------------\n`;
+        message += `_Kindly confirm my order and share delivery status._`;
+
+        let encodedMessage = encodeURIComponent(message);
+        let whatsappUrl = `https://wa.me/${MY_WHATSAPP_NUMBER}?text=${encodedMessage}`;
+        
+        window.open(whatsappUrl, '_blank');
+        
+        cart = {};
+        updateCartBar();
+        displayProducts();
+    }
+
+    function filterProducts() { displayProducts(); }
 
     function toggleLanguage() {
         currentLang = currentLang === "en" ? "ur" : "en";
         let data = langData[currentLang];
 
-        // Header update
         document.getElementById("txtTitle").innerText = data.title;
         document.getElementById("txtSubTitle").innerText = data.sub;
         document.getElementById("searchInput").placeholder = data.search;
         document.getElementById("langBtn").innerText = data.btn;
+        document.getElementById("lblOrderBtn").innerText = data.orderBtn;
 
-        // Alignment switch
         if(currentLang === "ur") {
             document.body.classList.add("rtl");
             document.getElementById("headerArea").classList.add("rtl");
+            document.getElementById("cartBar").classList.add("rtl");
         } else {
             document.body.classList.remove("rtl");
             document.getElementById("headerArea").classList.remove("rtl");
+            document.getElementById("cartBar").classList.remove("rtl");
         }
-
+        updateCartBar();
         displayProducts();
     }
 </script>
