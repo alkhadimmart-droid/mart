@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Al Khadim Mart - VIP Customer Order Portal</title>
+    <title>Al Khadim Mart - Customer Order Portal</title>
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #0f172a; margin: 0; padding: 15px; color: #f8fafc; padding-bottom: 100px; }
         .header-card { background: linear-gradient(135deg, #0284c7, #0f172a); padding: 20px; border-radius: 15px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); margin-bottom: 20px; position: relative; }
@@ -17,22 +17,20 @@
         .product-details span { font-size: 13px; color: #94a3b8; }
         .right-side { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
         .price-tag { background: #10b981; color: white; padding: 5px 10px; border-radius: 6px; font-weight: bold; font-size: 15px; }
-        .buy-btn { background: #38bdf8; color: #0f172a; border: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; display: block; }
-        .buy-btn:hover { background: #0ea5e9; }
+        .buy-btn { background: #38bdf8; color: #0f172a; border: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; }
         
-        /* Bottom Order Bar */
+        /* 🆕 NEW STYLES FOR PLUS/MINUS BUTTONS */
+        .qty-controls { display: flex; align-items: center; gap: 12px; background: #0f172a; padding: 4px 8px; border-radius: 8px; border: 1px solid #38bdf8; }
+        .qty-btn-circle { background: #38bdf8; color: #0f172a; border: none; width: 28px; height: 28px; border-radius: 50%; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 18px; padding: 0; line-height: 1; }
+        .qty-btn-circle.minus { background: #ef4444; color: white; border: none; }
+        .qty-text { font-size: 16px; font-weight: bold; color: white; min-width: 15px; text-align: center; }
+
         .cart-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #1e293b; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-top: 3px solid #10b981; box-shadow: 0 -4px 10px rgba(0,0,0,0.5); z-index: 1000; }
         .whatsapp-btn { background: #25d366; color: white; border: none; padding: 12px 25px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; }
-        .whatsapp-btn:hover { background: #20ba5a; }
-        
         .out-of-stock { border-left-color: #ef4444 !important; opacity: 0.6; }
-        .out-of-stock .price-tag { background: #ef4444 !important; }
-        
-        /* RTL for Urdu */
         .rtl { direction: rtl; text-align: right; }
         .rtl .lang-btn { right: auto; left: 15px; }
         .rtl .product-card { border-left: none; border-right: 5px solid #38bdf8; }
-        .rtl .out-of-stock { border-right-color: #ef4444 !important; }
         .rtl .right-side { text-align: left; align-items: flex-start; }
     </style>
 </head>
@@ -44,7 +42,7 @@
         <p id="txtSubTitle">Select Items & Order Directly on WhatsApp</p>
     </div>
 
-    <input type="text" id="searchInput" class="search-box" placeholder="🔍 Search item name or code..." oninput="filterProducts()">
+    <input type="text" id="searchInput" class="search-box" placeholder="🔍 Saman ka naam talash karein..." oninput="filterProducts()">
 
     <div class="product-list" id="productsContainer"></div>
 
@@ -62,7 +60,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 
 <script>
-    // ⚠️ YAHAAN APNI ASLI FIREBASE SETTINGS BHI DALEIN
+    // ⚠️ APNI ASLI FIREBASE CONFIGURATION YAHAAN DALEIN
     const firebaseConfig = {
         apiKey: "AIzaSyBzeLfXKCD-yp22eXJeUJqqGAgexq-tGvo", 
         authDomain: "al-khadim-mart.firebaseapp.com",
@@ -73,8 +71,25 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // ⚠️ APNA ASLI WHATSAPP NUMBER YAHAAN LIKHEIN (92 Se Shuru Karein)
-    const MY_WHATSAPP_NUMBER = "+923452081791"; 
+    // ⚠️ APNA ASLI WHATSAPP NUMBER LIKHEIN (92 se shuru karein)
+    const MY_WHATSAPP_NUMBER = "923001234567"; 
+
+    // Register se bilkul fresh 13 items ki list prices ke sath
+    let freshInventory = {
+        "1": { name: "Hilal Cake", cost: 181.25, sale: 200, stock: 24 },
+        "2": { name: "Crust Wafer", cost: 188.88, sale: 200, stock: 18 },
+        "3": { name: "Treat Candy", cost: 94.58, sale: 110, stock: 24 },
+        "4": { name: "Kalfa Jar", cost: 188.88, sale: 200, stock: 18 },
+        "5": { name: "Rite", cost: 261.11, sale: 270, stock: 18 },
+        "6": { name: "Bazooka", cost: 154.16, sale: 200, stock: 12 },
+        "7": { name: "Tuk Tok", cost: 120, sale: 130, stock: 18 },
+        "8": { name: "O Max wafer", cost: 194.16, sale: 205, stock: 24 },
+        "9": { name: "Matar Masala", cost: 113.88, sale: 130, stock: 18 },
+        "10": { name: "Doty", cost: 183.33, sale: 200, stock: 18 },
+        "11": { name: "Minto gum", cost: 187.5, sale: 200, stock: 12 },
+        "12": { name: "Twisto", cost: 237.5, sale: 250, stock: 12 },
+        "13": { name: "Pip & Nut", cost: 192.77, sale: 200, stock: 18 }
+    };
 
     let allProducts = {};
     let cart = {};
@@ -84,34 +99,28 @@
         en: {
             title: "Al Khadim Brothers Wholesale Mart",
             sub: "Select Items & Order Directly on WhatsApp",
-            search: "🔍 Search item name or code...",
-            btn: "اردو کریں",
-            code: "Code: #",
-            available: "In Stock",
-            notAvailable: "Out of Stock",
-            addBtn: "🛒 Add to Cart",
-            totalItems: "Total Items: ",
-            orderBtn: "Send WhatsApp Order"
+            search: "🔍 Search item name...",
+            btn: "اردو کریں", available: "In Stock", notAvailable: "Out of Stock",
+            addBtn: "🛒 Add to Cart", totalItems: "Total Items: ", orderBtn: "Send WhatsApp Order",
+            stockOutMsg: "Out of stock!"
         },
         ur: {
             title: "الخادم برادرز ہول سیل مارٹ",
             sub: "سودا سلف منتخب کریں اور براہِ راست واٹس ایپ پر آرڈر بھیجیں",
-            search: "🔍 سامان کا نام یا کوڈ تلاش کریں...",
-            btn: "English",
-            code: "آئٹم کوڈ: #",
-            available: "اسٹاک میں موجود ہے",
-            notAvailable: "ختم ہو گیا ہے",
-            addBtn: "🛒 ٹوکری میں ڈالیں",
-            totalItems: "کل سامان: ",
-            orderBtn: "واٹس ایپ پر آرڈر بھیجیں"
+            search: "🔍 سامان کا نام تلاش کریں...",
+            btn: "English", available: "موجود ہے", notAvailable: "ختم ہو گیا",
+            addBtn: "🛒 ٹوکری میں ڈالیں", totalItems: "کل سامان: ", orderBtn: "واٹس ایپ پر آرڈر بھیجیں",
+            stockOutMsg: "اسٹاک ختم ہوچکا ہے!"
         }
     };
 
+    // Pehli baar database ko purane data se saaf karke naye register items set karna
+    db.ref('products_inventory').once('value', (snap) => {
+        db.ref('products_inventory').set(freshInventory);
+    });
+
     db.ref('products_inventory').on('value', (snapshot) => {
-        if(snapshot.exists()) {
-            allProducts = snapshot.val();
-            displayProducts();
-        }
+        if(snapshot.exists()) { allProducts = snapshot.val(); displayProducts(); }
     });
 
     function displayProducts() {
@@ -122,21 +131,37 @@
 
         for(let code in allProducts) {
             let p = allProducts[code];
-            if(p.name.toLowerCase().includes(searchTxt) || code.includes(searchTxt)) {
+            if(p.name.toLowerCase().includes(searchTxt)) {
                 let isAvailable = (p.stock && p.stock > 0);
                 let stockStatusText = isAvailable ? `${p.stock} ${lang.available}` : lang.notAvailable;
                 let cardClass = isAvailable ? "product-card" : "product-card out-of-stock";
                 
                 let qtyInCart = cart[code] ? cart[code].qty : 0;
-                let actionButton = isAvailable 
-                    ? `<button class="buy-btn" onclick="addToCart('${code}')">${lang.addBtn} ${qtyInCart > 0 ? '('+qtyInCart+')' : ''}</button>` 
-                    : `<span style="color:#ef4444; font-size:12px; font-weight:bold;">${lang.notAvailable}</span>`;
+                let actionButton = "";
+
+                if (isAvailable) {
+                    // Agar item pehle se cart mein hai, toh + / - wale buttons dikhao
+                    if (qtyInCart > 0) {
+                        actionButton = `
+                            <div class="qty-controls">
+                                <button class="qty-btn-circle minus" onclick="changeCustomerQty('${code}', -1)">−</button>
+                                <span class="qty-text">${qtyInCart}</span>
+                                <button class="qty-btn-circle" onclick="changeCustomerQty('${code}', 1)">+</button>
+                            </div>
+                        `;
+                    } else {
+                        // Varna simple Add to Cart button dikhao
+                        actionButton = `<button class="buy-btn" onclick="changeCustomerQty('${code}', 1)">${lang.addBtn}</button>`;
+                    }
+                } else {
+                    actionButton = `<span style="color:#ef4444; font-size:12px; font-weight:bold;">${lang.notAvailable}</span>`;
+                }
 
                 container.innerHTML += `
                     <div class="${cardClass}">
                         <div class="product-details">
                             <h3>${p.name}</h3>
-                            <span>${lang.code}${code} | ${stockStatusText}</span>
+                            <span>${stockStatusText}</span>
                         </div>
                         <div class="right-side">
                             <div class="price-tag">Rs. ${p.sale}</div>
@@ -148,43 +173,41 @@
         }
     }
 
-    function addToCart(code) {
+    // Naya function jo items ki quantity (+ / -) ko control karega
+    function changeCustomerQty(code, amt) {
         let p = allProducts[code];
-        if (cart[code]) {
-            if(cart[code].qty < p.stock) {
-                cart[code].qty++;
-            } else {
-                alert("اس سے زیادہ اسٹاک دکان میں موجود نہیں ہے!");
-            }
-        } else {
+        let lang = langData[currentLang];
+        
+        if (!cart[code] && amt > 0) {
+            // First time add
             cart[code] = { name: p.name, sale: p.sale, qty: 1 };
+        } else if (cart[code]) {
+            let newQty = cart[code].qty + amt;
+            
+            if (newQty <= 0) {
+                delete cart[code]; // Zero hone par cart se nikal do
+            } else if (newQty > p.stock) {
+                alert(lang.stockOutMsg); // Stock se zyada allow mat karo
+            } else {
+                cart[code].qty = newQty;
+            }
         }
         updateCartBar();
         displayProducts();
     }
 
     function updateCartBar() {
-        let totalQty = 0;
-        let totalAmount = 0;
+        let totalQty = 0, totalAmount = 0;
         let lang = langData[currentLang];
-
-        for (let code in cart) {
-            totalQty += cart[code].qty;
-            totalAmount += (cart[code].sale * cart[code].qty);
-        }
-
+        for (let code in cart) { totalQty += cart[code].qty; totalAmount += (cart[code].sale * cart[code].qty); }
         document.getElementById("lblTotalItems").innerText = lang.totalItems + totalQty;
         document.getElementById("lblTotalAmount").innerText = totalAmount.toLocaleString();
     }
 
     function sendWhatsAppOrder() {
-        if (Object.keys(cart).length === 0) {
-            return alert(currentLang === "en" ? "Your cart is empty!" : "آپ کی ٹوکری خالی ہے!");
-        }
-
+        if (Object.keys(cart).length === 0) return alert("Cart khali hai!");
         let message = `*--- NEW ORDER: AL KHADIM MART ---*\n\n`;
-        let totalAmount = 0;
-        let count = 1;
+        let totalAmount = 0, count = 1;
 
         for (let code in cart) {
             let item = cart[code];
@@ -193,45 +216,25 @@
             message += `${count}) *${item.name}*\n     Qty: ${item.qty} x Rs.${item.sale} = *Rs.${itemTotal}*\n`;
             count++;
         }
-
-        message += `\n-----------------------------------\n`;
-        message += `*TOTAL BILL: Rs. ${totalAmount}*\n`;
-        message += `-----------------------------------\n`;
-        message += `_Kindly confirm my order and share delivery status._`;
-
-        let encodedMessage = encodeURIComponent(message);
-        let whatsappUrl = `https://wa.me/${MY_WHATSAPP_NUMBER}?text=${encodedMessage}`;
-        
-        window.open(whatsappUrl, '_blank');
-        
-        cart = {};
-        updateCartBar();
-        displayProducts();
+        message += `\n-----------------------------------\n*TOTAL BILL: Rs. ${totalAmount}*\n-----------------------------------\n`;
+        window.open(`https://wa.me/${MY_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
+        cart = {}; updateCartBar(); displayProducts();
     }
 
     function filterProducts() { displayProducts(); }
-
+    
     function toggleLanguage() {
         currentLang = currentLang === "en" ? "ur" : "en";
         let data = langData[currentLang];
-
         document.getElementById("txtTitle").innerText = data.title;
         document.getElementById("txtSubTitle").innerText = data.sub;
         document.getElementById("searchInput").placeholder = data.search;
         document.getElementById("langBtn").innerText = data.btn;
         document.getElementById("lblOrderBtn").innerText = data.orderBtn;
 
-        if(currentLang === "ur") {
-            document.body.classList.add("rtl");
-            document.getElementById("headerArea").classList.add("rtl");
-            document.getElementById("cartBar").classList.add("rtl");
-        } else {
-            document.body.classList.remove("rtl");
-            document.getElementById("headerArea").classList.remove("rtl");
-            document.getElementById("cartBar").classList.remove("rtl");
-        }
-        updateCartBar();
-        displayProducts();
+        if(currentLang === "ur") { document.body.classList.add("rtl"); document.getElementById("headerArea").classList.add("rtl"); document.getElementById("cartBar").classList.add("rtl"); }
+        else { document.body.classList.remove("rtl"); document.getElementById("headerArea").classList.remove("rtl"); document.getElementById("cartBar").classList.remove("rtl"); }
+        updateCartBar(); displayProducts();
     }
 </script>
 </body>
