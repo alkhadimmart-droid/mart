@@ -59,7 +59,7 @@
     <div class="header">
         <h1>Al Khadim Brothers Wholesale Mart</h1>
         <div>
-            <span style="color:#94a3b8; margin-right: 15px;">Cashier: <strong id="currentActiveUserText" style="color:#10b981;">---</strong></span>
+            <span style="color:#94a3b8; margin-right: 15px;">Naam: <strong id="currentActiveUserText" style="color:#10b981;">---</strong></span>
             <button class="btn-red" onclick="logout()">Logout</button>
         </div>
     </div>
@@ -185,9 +185,17 @@
                 <p style="color:green;"><strong>Net Business Profit:</strong> Rs. <span id="rNetProfit">0</span></p>
                 
                 <hr>
-                <h3 style="margin-bottom:5px;">👤 Salesman Performance</h3>
-                <table style="color:black; font-size:14px; border:1px solid #ccc;">
-                    <thead><tr style="background:#eee;"><th>Cashier</th><th>Bills Made</th><th>Total Sale</th></tr></thead>
+                <h3 style="margin-bottom:5px;">👤 Salesman Performance Tafseel</h3>
+                <table style="color:black; font-size:14px; border:1px solid #ccc; width: 100%;">
+                    <thead>
+                        <tr style="background:#eee;">
+                            <th>Salesman Naam</th>
+                            <th>Kul Bill</th>
+                            <th>Kul Sale</th>
+                            <th>Naqd Mila (Cash)</th>
+                            <th>Udhaar Diya</th>
+                        </tr>
+                    </thead>
                     <tbody id="rCashierBody"></tbody>
                 </table>
             </div>
@@ -219,26 +227,36 @@
                 <p style="margin:2px 0; border-top:1px dashed black; padding-top:2px;"><strong>Baqi Khata: Rs. <span id="bNewB">0</span></strong></p>
             </div>
         </div>
-        <p style="text-align:center; font-size:11px; margin-top:15px;">Cashier: <span id="billCashierName"></span><br>Thank you for shopping!</p>
+        <p style="text-align:center; font-size:11px; margin-top:15px;">Naam: <span id="billCashierName"></span><br>Thank you for shopping!</p>
     </div>
 
     <!-- ================= JAVASCRIPT ================= -->
     <script>
-        // Data Structures (LocalStorage)
-        let products = JSON.parse(localStorage.getItem("mart_products")) || [];
-        let customers = JSON.parse(localStorage.getItem("mart_customers")) || {};
-        let expenses = JSON.parse(localStorage.getItem("mart_expenses")) || [];
-        let salesHistory = JSON.parse(localStorage.getItem("mart_sales")) || [];
+        // SMART FIX: Purana koi bhi data dhoond kar wapas laane ke liye multiple keys check ki hain
+        let products = JSON.parse(localStorage.getItem("mart_products")) || JSON.parse(localStorage.getItem("martProducts")) || JSON.parse(localStorage.getItem("products")) || [];
+        let customers = JSON.parse(localStorage.getItem("mart_customers")) || JSON.parse(localStorage.getItem("customers")) || {};
+        let expenses = JSON.parse(localStorage.getItem("mart_expenses")) || JSON.parse(localStorage.getItem("expenses")) || [];
+        let salesHistory = JSON.parse(localStorage.getItem("mart_sales")) || JSON.parse(localStorage.getItem("salesHistory")) || JSON.parse(localStorage.getItem("martSalesHistory")) || [];
         
         const systemUsers = { "Admin": "1234", "Ali": "1111", "Bilal": "2222" };
         let currentUser = "";
         let cart = [];
 
         function saveDB() {
+            // Tamam keys me data save kar rhe hain taake data safe rahe
             localStorage.setItem("mart_products", JSON.stringify(products));
-            localStorage.setItem("mart_customers", JSON.stringify(customers));
-            localStorage.setItem("mart_expenses", JSON.stringify(expenses));
+            localStorage.setItem("martProducts", JSON.stringify(products));
+            localStorage.setItem("products", JSON.stringify(products));
+
             localStorage.setItem("mart_sales", JSON.stringify(salesHistory));
+            localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
+            localStorage.setItem("martSalesHistory", JSON.stringify(salesHistory));
+
+            localStorage.setItem("mart_customers", JSON.stringify(customers));
+            localStorage.setItem("customers", JSON.stringify(customers));
+
+            localStorage.setItem("mart_expenses", JSON.stringify(expenses));
+            localStorage.setItem("expenses", JSON.stringify(expenses));
         }
 
         function attemptLogin() {
@@ -263,7 +281,7 @@
 
         function logout() { location.reload(); }
 
-        // --- Counter / Cart Logic ---
+        // --- Counter Logic ---
         function manualSearch() {
             let val = document.getElementById("barcodeInput").value.toLowerCase().trim();
             if(val === "") return;
@@ -271,7 +289,6 @@
             let pIndex = products.findIndex(p => p.name.toLowerCase().includes(val) || p.id === val);
             if(pIndex > -1) { 
                 let p = products[pIndex];
-                if(p.qty <= 0) return alert("Yeh saman khatam ho chuka hai (Out of Stock)!");
                 addToCart(p.id, p.name, p.price, p.cost); 
                 document.getElementById("barcodeInput").value = "";
             } else { alert("Item nahi mila!"); }
@@ -303,11 +320,10 @@
             });
             document.getElementById("cartTableBody").innerHTML = html;
             document.getElementById("netTotalText").innerText = net;
-            document.getElementById("cashReceived").value = net; // default full pay
+            document.getElementById("cashReceived").value = net;
             calculateUdhaar();
         }
 
-        // --- Khata & Udhaar Logic (Counter) ---
         function fetchCustomerData() {
             let phone = document.getElementById("custPhone").value.trim();
             let oldBal = 0;
@@ -325,11 +341,6 @@
             let net = parseFloat(document.getElementById("netTotalText").innerText) || 0;
             let cash = parseFloat(document.getElementById("cashReceived").value) || 0;
             let oldBal = parseFloat(document.getElementById("custOldBalance").innerText) || 0;
-            
-            // Total payment needed = old balance + new bill
-            // If cash given is less than bill, remaining goes to udhaar
-            // Example: Bill 100, Cash 20. Naya Udhaar for this bill is 80.
-            // Total Baqi = oldBal + 80;
             let nayaBaqi = (oldBal + net) - cash;
             document.getElementById("newUdhaarText").innerText = nayaBaqi;
         }
@@ -348,7 +359,6 @@
             
             let oldBal = 0, newBal = 0;
 
-            // Handle Customer Khata
             if(phone) {
                 if(!customers[phone]) customers[phone] = { name: name || "Unknown", balance: 0, history: [] };
                 oldBal = customers[phone].balance;
@@ -359,17 +369,14 @@
                 return alert("Udhaar ke liye Customer ka Mobile Number likhna zaroori hai!");
             }
 
-            // Deduct Stock
             cart.forEach(c => {
                 let p = products.find(prod => prod.id === c.id);
                 if(p) p.qty -= c.qty;
             });
 
-            // Save Sale History
             salesHistory.push({ date, cashier: currentUser, total: netTotal, profit, cashPaid: cash, phone });
             saveDB();
 
-            // Print Details Setup
             if(phone) {
                 document.getElementById("billCustomerInfo").style.display = "block";
                 document.getElementById("bCustName").innerText = customers[phone].name;
@@ -396,7 +403,6 @@
             window.print();
             area.classList.remove("print-active-target");
 
-            // Reset
             cart = []; 
             document.getElementById("custPhone").value = ""; 
             document.getElementById("custName").value = "";
@@ -404,7 +410,7 @@
             if(currentUser === "Admin") updateAdminDashboard();
         }
 
-        // --- Admin Controls ---
+        // --- Admin Control ---
         function switchAdminTab(tab) {
             document.querySelectorAll('.admin-tab').forEach(el => el.style.display = 'none');
             document.getElementById('tab-' + tab).style.display = 'block';
@@ -451,6 +457,10 @@
             products.push({ id: "P"+Date.now(), name, cost: parseFloat(cost||price), price: parseFloat(price), qty: parseInt(qty||0), lowAlert: parseInt(alertLevel) });
             saveDB();
             updateAdminDashboard();
+            document.getElementById("newProdName").value = "";
+            document.getElementById("newProdCost").value = "";
+            document.getElementById("newProdSale").value = "";
+            document.getElementById("newProdQty").value = "";
         }
 
         function delProduct(i) { if(confirm("Delete item?")) { products.splice(i,1); saveDB(); updateAdminDashboard(); } }
@@ -460,7 +470,6 @@
             if(q && !isNaN(q)) { products[i].qty += parseInt(q); saveDB(); updateAdminDashboard(); }
         }
 
-        // --- Khata (Ledger) ---
         function updateKhataTable() {
             let html = "";
             for(let phone in customers) {
@@ -476,19 +485,19 @@
             let amt = prompt("Grahak ne kitne paise jama karwaye?");
             if(amt && !isNaN(amt)) {
                 customers[phone].balance -= parseFloat(amt);
-                // Logging payment as a system sale receipt to balance cash flow
-                salesHistory.push({ date: new Date().toISOString().split('T')[0], cashier: currentUser, total: 0, profit: 0, cashPaid: parseFloat(amt), phone, note: "Udhaar Received" });
+                salesHistory.push({ date: new Date().toISOString().split('T')[0], cashier: currentUser, total: 0, profit: 0, cashPaid: parseFloat(amt), phone });
                 saveDB(); updateKhataTable(); updateAdminDashboard();
             }
         }
 
-        // --- Expenses ---
         function addExpense() {
             let desc = document.getElementById("expDesc").value;
             let amt = document.getElementById("expAmt").value;
             if(!desc || !amt) return alert("Details bharein.");
             expenses.push({ date: new Date().toISOString().split('T')[0], desc, amount: parseFloat(amt), by: currentUser });
             saveDB(); updateExpenseTable(); updateAdminDashboard();
+            document.getElementById("expDesc").value = "";
+            document.getElementById("expAmt").value = "";
         }
 
         function updateExpenseTable() {
@@ -497,7 +506,7 @@
             document.getElementById("expenseTableBody").innerHTML = html;
         }
 
-        // --- Reports ---
+        // --- NEW DETAILED REPORT LOGIC ---
         function generateReport() {
             let sDate = document.getElementById("repStart").value;
             let eDate = document.getElementById("repEnd").value;
@@ -508,11 +517,21 @@
 
             salesHistory.forEach(s => {
                 if(s.date >= sDate && s.date <= eDate) {
-                    rSale += s.total; rCash += s.cashPaid; rProfit += s.profit;
+                    rSale += s.total; 
+                    rCash += s.cashPaid; 
+                    rProfit += s.profit;
+                    
                     let c = s.cashier || "Unknown";
-                    if(!cashierData[c]) cashierData[c] = { bills: 0, total: 0 };
+                    if(!cashierData[c]) cashierData[c] = { bills: 0, total: 0, cash: 0, udhaar: 0 };
+                    
                     if(s.total > 0) cashierData[c].bills++;
-                    cashierData[c].total += s.total;
+                    cashierData[c].total += s.total; // Kul sale
+                    cashierData[c].cash += s.cashPaid; // Naqd mila
+                    
+                    let billUdhaar = s.total - s.cashPaid;
+                    if(billUdhaar > 0) {
+                        cashierData[c].udhaar += billUdhaar; // Kitna udhaar diya
+                    }
                 }
             });
 
@@ -522,12 +541,24 @@
             document.getElementById("repDateRange").innerText = `From: ${sDate} To: ${eDate}`;
             document.getElementById("rTotalSales").innerText = rSale;
             document.getElementById("rCashSales").innerText = rCash;
-            document.getElementById("rUdhaar").innerText = rSale - rCash;
+            document.getElementById("rUdhaar").innerText = (rSale - rCash > 0) ? (rSale - rCash) : 0;
             document.getElementById("rExpenses").innerText = rExp;
             document.getElementById("rNetProfit").innerText = rProfit - rExp;
 
+            // Displaying Salesman details with complete breakdown (Bills, Sale, Cash, Credit)
             let cHtml = "";
-            for(let k in cashierData) { cHtml += `<tr><td>${k}</td><td>${cashierData[k].bills}</td><td>Rs. ${cashierData[k].total}</td></tr>`; }
+            for(let k in cashierData) { 
+                cHtml += `<tr>
+                    <td><strong>${k}</strong></td>
+                    <td>${cashierData[k].bills}</td>
+                    <td style="color: #3b82f6; font-weight:bold;">Rs. ${cashierData[k].total}</td>
+                    <td style="color: #10b981;">Rs. ${cashierData[k].cash}</td>
+                    <td style="color: #ef4444;">Rs. ${cashierData[k].udhaar}</td>
+                </tr>`; 
+            }
+            if(Object.keys(cashierData).length === 0) {
+                cHtml = `<tr><td colspan="5" style="text-align:center;">Is date range me koi record nahi mila.</td></tr>`;
+            }
             document.getElementById("rCashierBody").innerHTML = cHtml;
         }
 
@@ -536,6 +567,11 @@
             area.classList.add("print-active-target");
             window.print();
             area.classList.remove("print-active-target");
+        }
+
+        // Auto load initial stats if admin
+        window.onload = function() {
+            if(currentUser === "Admin") updateAdminDashboard();
         }
     </script>
 </body>
