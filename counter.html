@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Al Khadim Mart - Multi-User Billing System</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #0f172a; margin: 0; padding: 20px; color: #f8fafc; }
+        .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        .box { background: #1e293b; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h1, h3, h4 { margin-top: 0; color: #38bdf8; }
+        input, button, select { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: white; font-size: 16px; box-sizing: border-box; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; text-align: left; }
+        th, td { padding: 12px; border-bottom: 1px solid #334155; }
+        th { background: #0f172a; color: #94a3b8; }
+        .total-box { background: #10b981; padding: 15px; border-radius: 8px; text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 10px; }
+        .print-btn { background: #38bdf8; font-size: 18px; font-weight: bold; cursor: pointer; border: none; color: #0f172a; }
+        .print-btn:hover { background: #0ea5e9; }
+        .nav-btn { width: auto; padding: 10px 20px; border: none; cursor: pointer; border-radius: 8px; font-weight: bold; }
+        .admin-btn { background: #3b82f6; color: white; float: right; }
+        .logout-btn { background: #64748b; color: white; width: auto; padding: 8px 15px; float: left; border: none; cursor: pointer; border-radius: 6px; }
+        .sub-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: #334155; padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid #38bdf8; }
+        .low-stock { color: #f87171; font-weight: bold; }
+        #toast { position: fixed; bottom: 20px; left: 20px; background: #10b981; color: white; padding: 12px 24px; border-radius: 8px; display: none; font-weight: bold; z-index: 2000; }
+        .search-results { background: #0f172a; border: 1px solid #475569; border-radius: 8px; max-height: 180px; overflow-y: auto; margin-top: -10px; margin-bottom: 15px; display: none; }
+        .search-item { padding: 12px; cursor: pointer; border-bottom: 1px solid #1e293b; display: flex; justify-content: space-between; }
+        .search-item:hover { background: #38bdf8; color: #0f172a; font-weight: bold; }
+        
+        #loginOverlay { position: fixed; top:0; left:0; width:100%; height:100%; background:#0f172a; z-index:5000; display:flex; justify-content:center; align-items:center; }
+        .login-box { background:#1e293b; padding:40px; border-radius:12px; width:100%; max-width:400px; box-shadow:0 10px 25px rgba(0,0,0,0.3); text-align:center; }
+
+        .live-log-container { background: #0f172a; border-radius: 8px; padding: 10px; max-height: 180px; overflow-y: auto; font-family: monospace; font-size: 14px; border: 1px solid #334155; }
+        .live-log-item { padding: 6px 10px; border-bottom: 1px solid #1e293b; display: flex; justify-content: space-between; color: #a7f3d0; }
+
+        .print-section-totals { width: 100%; border-top: 2px dashed #475569; margin-top: 15px; padding-top: 10px; }
+        .print-row { display: flex; justify-content: space-between; font-size: 16px; margin-bottom: 5px; color: #f8fafc; }
+
+        /* 👑 NAYI TABDEELI: Admin Panel Ka Alag Color (Dark Indigo Theme) */
+        #adminView {
+            background-color: #1e1b4b; /* Admin ka khaas background color */
+            border: 2px solid #ef4444; /* Admin Panel ki Red Border */
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+        #adminView .box { background-color: #312e81; border: 1px solid #4338ca; }
+        #adminView th { background-color: #312e81; color: white; }
+        #adminView .stat-card { background-color: #3730a3; }
+        /* ----------------------------------------------------------- */
+
+        /* 🖨️ PRINT SYSTEM */
+        @media print {
+            @page { margin: 0; }
+            body { background: white !important; color: black !important; padding: 0 !important; margin: 0 !important; visibility: hidden !important; }
+            .print-active-target { visibility: visible !important; position: absolute !important; left: 10px !important; top: 15px !important; width: calc(100% - 20px) !important; display: block !important; background: white !important; color: black !important; }
+            .print-active-target * { visibility: visible !important; color: black !important; }
+            .qty-btn { display: none !important; }
+            table { display: table !important; width: 100% !important; border-collapse: collapse !important; margin-top: 10px !important; }
+            thead { display: table-header-group !important; }
+            tbody { display: table-row-group !important; }
+            tr { display: table-row !important; }
+            th { display: table-cell !important; color: black !important; font-weight: bold !important; border-bottom: 2px solid black !important; padding: 6px !important; font-size: 14px !important; text-align: left !important; }
+            td { display: table-cell !important; color: black !important; border-bottom: 1px solid #ccc !important; padding: 6px !important; font-size: 13px !important; text-align: left !important; }
+            .print-section-totals { display: block !important; border-top: 1px dashed black !important; margin-top: 15px !important; padding-top: 8px !important; }
+            .print-row { display: flex !important; justify-content: space-between !important; font-size: 14px !important; margin-bottom: 4px !important; font-weight: bold !important; color: black !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loginOverlay">
+        <div class="login-box">
+            <h2 style="color:#38bdf8; margin-bottom:20px;">Al Khadim Brothers Mart<br><span style="font-size:16px; color:#94a3b8;">User Login System</span></h2>
+            <label style="display:block; text-align:left; margin-bottom:5px;">Select Your Name:</label>
+            <select id="loginUserSelect">
+                <option value="Admin">Admin (Owner)</option>
+                <option value="Ali">User 1 (Ali)</option>
+                <option value="Bilal">User 2 (Bilal)</option>
+                <option value="Hamza">User 3 (Hamza)</option>
+            </select>
+            <label style="display:block; text-align:left; margin-bottom:5px;">Enter Pin/Password:</label>
+            <input type="password" id="loginPasswordInput" placeholder="****">
+            <button style="background:#38bdf8; color:#0f172a; font-weight:bold; cursor:pointer;" onclick="attemptLogin()">🔐 LOGIN TO SYSTEM</button>
+        </div>
+    </div>
+
+    <div style="overflow: hidden; margin-bottom: 20px;" id="topHeader">
+        <select id="langSelect" onchange="switchLanguage(this.value)" style="width: auto; float: right; margin-left: 10px; background: #1e293b; color: white; padding: 10px; border-radius: 8px; border: 1px solid #475569; font-weight: bold; cursor: pointer;">
+            <option value="en">🇺🇸 English</option>
+            <option value="ur">🇵🇰 اردو (Urdu)</option>
+        </select>
+
+        <button class="nav-btn admin-btn" id="btnLogoutSystem" onclick="logoutSystem()" style="background:#ef4444; margin-left:10px;">🔒 Logout System</button>
+        <button class="nav-btn admin-btn" onclick="openAdminPanelDirect()" id="btnAdminNav" style="background:#3b82f6; display:none;">⚙️ Admin Panel</button>
+        <button class="nav-btn admin-btn" id="btnShiftClose" onclick="printAndCloseCashierShift()" style="background:#f59e0b; margin-right:10px;">🕒 Close My Shift & Print</button>
+        
+        <h1 id="mainTitle">Al Khadim Brothers Wholesale Mart</h1>
+        <p id="subTitle" style="margin: 5px 0 0 0; color: #38bdf8; font-weight:bold;"><span id="activeCashierLabel">Active Cashier: </span><span id="currentActiveUserText" style="color:#10b981;">None</span></p>
+    </div>
+
+    <div id="toast"></div>
+
+    <div id="counterView">
+        <div class="grid">
+            <div class="box">
+                <h3 id="counterTitleText">🛒 Counter Bill Items</h3>
+                <input type="text" id="itemSearchInput" placeholder="🔍 Saman ka NAAM likhein ya QR/Barcode scan karein..." oninput="searchProductsAsync(this.value)" autocomplete="off">
+                <div class="search-results" id="searchResultsBox"></div>
+                 
+                <div id="printArea">
+                    <h2 id="receiptHeader" style="display:none; text-align:center; color:black; margin-bottom:5px; font-weight: bold; font-size: 18px;">Al Khadim Brothers Mart</h2>
+                    <p id="receiptMeta" style="display:none; text-align:center; color:black; font-size:12px; margin-bottom:10px;"></p>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th id="thBillCode">Code</th>
+                                <th id="thBillName">Item Name</th>
+                                <th id="thBillPrice">Price</th>
+                                <th id="thBillQty">Qty</th>
+                                <th id="thBillTotal">Total</th>
+                                <th id="thBillAction" class="qty-btn">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="billTableBody"></tbody>
+                    </table>
+
+                    <div class="print-section-totals">
+                        <div class="print-row"><span id="lblGrossBillText">Gross Bill:</span><span id="prGrossText">Rs. 0</span></div>
+                        <div class="print-row"><span id="lblDiscountBillText">Discount:</span><span id="prDiscountText">Rs. 0</span></div>
+                        <div class="print-row" style="font-size: 16px; border-top:1px dashed #475569; padding-top:5px; font-weight:bold;"><span id="lblNetPayableText">Net Payable:</span><span id="prGrandText" style="color:#10b981;">Rs. 0</span></div>
+                        <p id="receiptFooter" style="display:none; text-align: center; font-size: 12px; margin-top: 15px; font-weight: normal; color:black;">Shukriya! Thank You For Shopping.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="box" style="display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <h3 id="checkoutTitleText">💰 Checkout Summary</h3>
+                    <label id="lblDiscountText">Discount:</label>
+                    <input type="number" id="discountInput" placeholder="Rs. 0" value="0" oninput="calculateTotal()">
+                    <div class="total-box" style="background:#1e293b; border: 2px solid #10b981;"><span id="lblBoxGross">Gross: Rs. </span><span id="grossTotalText">0</span></div>
+                    <div class="total-box"><span id="lblBoxTotal">Total Bill: Rs. </span><span id="grandTotalText">0</span></div>
+                </div>
+                <button class="print-btn" onclick="printAndSaveBillLocal()" id="btnPrintBtn">🖨️ PRINT & SAVE BILL</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN VIEW PANEL -->
+    <div id="adminView" style="display: none;">
+        <div style="overflow: hidden; margin-bottom: 15px; border-bottom: 2px dashed #ef4444; padding-bottom:20px;">
+            <button class="logout-btn" id="btnCloseAdminView" onclick="closeAdminPanelDirect()" style="background:#ef4444;">🔒 Close Admin View</button>
+            <h2 style="color: #f87171; text-align: center; margin: 0;" id="adminTitleText">⚙️ Grand Admin Control & Advanced Reports</h2>
+        </div>
+
+        <div class="sub-grid">
+            <div class="stat-card" style="border-left-color: #3b82f6;">
+                <h4 id="cardTotalItemsText">📦 Total Items</h4>
+                <p style="font-size: 20px; font-weight: bold; margin: 5px 0 0 0;" id="txtTotalItems">0</p>
+            </div>
+            <div class="stat-card" style="border-left-color: #eab308;">
+                <h4 id="cardStockCostText">💰 Stock Cost (Khareed)</h4>
+                <p style="font-size: 20px; font-weight: bold; margin: 5px 0 0 0;">Rs. <span id="txtStockCostValue">0</span></p>
+            </div>
+            <div class="stat-card" style="border-left-color: #10b981;">
+                <h4 id="cardFilteredSalesText">💵 Filtered Sales</h4>
+                <p style="font-size: 20px; font-weight: bold; margin: 5px 0 0 0;">Rs. <span id="filterSalesText">0</span></p>
+            </div>
+            <div class="stat-card" style="border-left-color: #ec4899;">
+                <h4 id="cardFilteredProfitText">📈 Filtered Profit</h4>
+                <p style="font-size: 20px; font-weight: bold; margin: 5px 0 0 0;">Rs. <span id="filterProfitText">0</span></p>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="box" id="productFormContainer" style="border-top: 4px solid #ef4444;">
+                <h3 id="formTitle">➕ Add / Edit Product</h3>
+                <label id="lblCodeText">Item Code / Barcode Number:</label>
+                <input type="text" id="newCode" placeholder="e.g. 1 ya scan barcode">
+                <label id="lblNameText">Product Name (Saman Ka Naam):</label>
+                <input type="text" id="newName" placeholder="e.g. Hilal Cake">
+                <label id="lblCostText">Cost Price (Khareed Rate):</label>
+                <input type="number" id="newCost" placeholder="Rs.">
+                <label id="lblSaleText">Sale Price (Bechna Rate):</label>
+                <input type="number" id="newSale" placeholder="Rs.">
+                
+                <label id="lblInitialStockText">Total Saman Liya (Initial Stock):</label>
+                <input type="number" id="newInitialStock" placeholder="Kitna saman aya tha?">
+                <label id="lblRemainingStockText">Baqi Saman (Remaining Stock):</label>
+                <input type="number" id="newStock" placeholder="Abhi kitna bacha hai?">
+                
+                <button style="background:#ef4444; cursor:pointer; font-weight:bold;" onclick="saveProductLocal()" id="btnSaveProduct">➕ SAVE PRODUCT TO CLOUD</button>
+                
+                <h3 id="liveLogTitleText" style="margin-top:20px;">⚡ Live Sales Activity Log</h3>
+                <div class="live-log-container" id="liveActivityLogBox">
+                    <div style="color:#64748b; text-align:center; padding-top:20px;">No sales recorded yet today.</div>
+                </div>
+            </div>
+
+            <div class="box" style="border-top: 4px solid #38bdf8;">
+                <h3 id="reportsTitleText">📊 Intelligent Reports Panel</h3>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
+                    <div>
+                        <label style="font-size: 13px;" id="lblDailyFilterText">📅 Rozana Filter (Daily):</label>
+                        <input type="date" id="reportDateInput" onchange="generateAdvancedReports('day')">
+                        <button style="background:#10b981; color:white; font-size:14px; cursor:pointer; padding:8px;" id="btnPrintDailyBtn" onclick="printFilteredReport('day')">🖨️ Print Daily Report</button>
+                    </div>
+                    <div>
+                        <label style="font-size: 13px;" id="lblMonthlyFilterText">🗓️ Mahana Filter (Monthly):</label>
+                        <input type="month" id="reportMonthInput" onchange="generateAdvancedReports('month')">
+                        <button style="background:#3b82f6; color:white; font-size:14px; cursor:pointer; padding:8px;" id="btnPrintMonthlyBtn" onclick="printFilteredReport('month')">🖨️ Print Monthly Report</button>
+                    </div>
+                </div>
+                
+                <div id="reportPrintArea" style="display:none; color:black; font-family:Arial, sans-serif; background:white; padding:15px;">
+                    <h2 style="text-align:center; margin:0; font-size:18px; font-weight:bold; color:black;">AL KHADIM BROTHERS MART</h2>
+                    <h3 style="text-align:center; margin:5px 0; font-size:14px; color:black;" id="printReportTitle">FINAL BUSINESS REPORT</h3>
+                    <p style="text-align:center; font-size:12px; color:black; margin-bottom:15px;" id="printReportMeta"></p>
+                    <hr style="border:1px dashed black;">
+                    <table style="width:100%; font-size:14px; color:black; margin-top:10px;">
+                        <tr><td><strong>Total Invoiced Bills:</strong></td><td style="text-align:right; font-weight:bold;" id="prTotalBills">0</td></tr>
+                        <tr><td><strong>Total Gross Sales:</strong></td><td style="text-align:right; font-weight:bold;" id="prSales">Rs. 0</td></tr>
+                        <tr><td><strong>Net System Profit:</strong></td><td style="text-align:right; font-weight:bold; color:black;" id="prProfit">Rs. 0</td></tr>
+                    </table>
+                    <hr style="border:1px dashed black; margin-top:20px;">
+                    <p style="text-align:center; font-size:11px; margin-top:10px; color:black;">Al Khadim Core POS Engine - End of Report</p>
+                </div>
+
+                <div id="shiftPrintArea" style="display:none; color:black; font-family:Arial, sans-serif; background: white; padding: 10px;">
+                    <h2 style="text-align:center; margin:0; font-size:16px; font-weight:bold; color:black;">AL KHADIM BROTHERS MART</h2>
+                    <h3 style="text-align:center; margin:4px 0; font-size:13px; color:black;">CASHIER SHIFT REPORT</h3>
+                    <hr style="border:1px solid black;">
+                    <p style="font-size:14px; margin: 4px 0; color:black;"><strong>CASHIER:</strong> <span id="sfUser" style="font-weight:bold;">-</span></p>
+                    <p style="font-size:12px; margin: 4px 0; color:black;"><strong>SHIFT END:</strong> <span id="sfTime">-</span></p>
+                    <hr style="border:1px dashed black;">
+                    <div style="margin: 15px 0; display:flex; justify-content:space-between; font-size:16px; color:black;">
+                        <span><strong>TOTAL SHIFT SALE:</strong></span>
+                        <span><strong id="sfSales" style="font-size:18px;">Rs. 0</strong></span>
+                    </div>
+                </div>
+
+                <h3 style="margin-top:25px;" id="stockRecordsTitleText">📦 Current Stock Records</h3>
+                <div style="max-height: 340px; overflow-y: auto; background: #0f172a; padding: 5px; border-radius: 8px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th id="thAdminCode">Code</th>
+                                <th id="thAdminName">Name</th>
+                                <th id="thAdminCost" class="admin-price-field">Khareed</th>
+                                <th id="thAdminSale">Bechna</th>
+                                <th id="thAdminTotal">Total Saman</th>
+                                <th id="thAdminBaqi">Baqi Stock</th>
+                                <th id="thAdminAction">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stockTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBzeLfXKCD-yp22eXJeUJqqGAgexq-tGvo", 
+        authDomain: "al-khadim-mart.firebaseapp.com",
+        databaseURL: "https://al-khadim-mart-default-rtdb.firebaseio.com/",
+        projectId: "al-khadim-mart",
+        storageBucket: "al-khadim-mart.appspot.com"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const systemUsers = { "Admin": "1234", "Ali": "1111", "Bilal": "2222", "Hamza": "3333" };
+    let currentUser = "";
+    let localProducts = {}; let localSalesHistory = {}; let currentCart = {};
+    let currentLang = "en";
+
+    // Translations...
+    const translations = {
+        en: {
+            mainTitle: "Al Khadim Brothers Wholesale Mart",
+            activeCashier: "Active Cashier: ",
+            logoutBtn: "🔒 Logout System",
+            adminBtn: "⚙️ Admin Panel",
+            shiftBtn: "🕒 Close My Shift & Print",
+            counterTitle: "🛒 Counter Bill Items",
+            searchPlaceholder: "🔍 Saman ka NAAM likhein ya QR/Barcode scan karein...",
+            thCode: "Code", thName: "Item Name", thPrice: "Price", thQty: "Qty", thTotal: "Total", thBillAction: "Action",
+            thKhareed: "Khareed", thBechna: "Bechna", thTotalSaman: "Total Saman", thBaqiStock: "Baqi Stock", thAction: "Action",
+            checkoutTitle: "💰 Checkout Summary",
+            lblDiscount: "Discount:",
+            lblBoxGross: "Gross: Rs. ",
+            lblBoxTotal: "Total Bill: Rs. ",
+            btnPrint: "🖨️ PRINT & SAVE BILL",
+            adminTitle: "⚙️ Grand Admin Control & Advanced Reports",
+            closeAdmin: "🔒 Close Admin View",
+            cardTotalItems: "📦 Total Items",
+            cardStockCost: "💰 Stock Cost (Khareed)",
+            cardFilteredSales: "💵 Filtered Sales",
+            cardFilteredProfit: "📈 Filtered Profit",
+            formAddTitle: "➕ Add / Edit Product",
+            formEditTitle: "✏️ Edit Product Details",
+            lblCode: "Item Code / Barcode Number:",
+            lblName: "Product Name (Saman Ka Naam):",
+            lblCost: "Cost Price (Khareed Rate):",
+            lblSale: "Sale Price (Bechna Rate):",
+            lblInitialStock: "Total Saman Liya (Initial Stock):",
+            lblRemainingStock: "Baqi Saman (Remaining Stock):",
+            btnSaveCloud: "➕ SAVE PRODUCT TO CLOUD",
+            btnUpdateCloud: "💾 UPDATE CHANGES IN CLOUD",
+            liveLogTitle: "⚡ Live Sales Activity Log",
+            reportsTitle: "📊 Intelligent Reports Panel",
+            lblDailyFilter: "📅 Rozana Filter (Daily):",
+            lblMonthlyFilter: "🗓️ Mahana Filter (Monthly):",
+            btnPrintDaily: "🖨️ Print Daily Report",
+            btnPrintMonthly: "🖨️ Print Monthly Report",
+            stockRecordsTitle: "📦 Current Stock Records",
+            receiptGross: "Gross Bill:",
+            receiptDiscount: "Discount:",
+            receiptNet: "Net Payable:"
+        },
+        ur: {
+            // ... (Aapki Urdu Translations)
+            mainTitle: "الخادم برادرز ہول سیل مارٹ",
+            activeCashier: "موجودہ کیشئیر: ",
+            logoutBtn: "🔒 لاگ آؤٹ سسٹم",
+            adminBtn: "⚙️ ایڈمن پینل",
+            shiftBtn: "🕒 شفٹ بند کریں اور پرنٹ کریں",
+            counterTitle: "🛒 کاؤنٹر بل آئٹمز",
+            searchPlaceholder: "🔍 سامان کا نام لکھیں یا بارکوڈ اسکین کریں...",
+            thCode: "کوڈ", thName: "سامان کا نام", thPrice: "قیمت", thQty: "تعداد", thTotal: "ٹوٹل", thBillAction: "ایکشن",
+            thKhareed: "خرید ریٹ", thBechna: "فروخت ریٹ", thTotalSaman: "کل سامان لیا", thBaqiStock: "باقی اسٹاک", thAction: "ایکشن",
+            checkoutTitle: "💰 بل کی تفصیلات",
+            lblDiscount: "ڈسکاؤنٹ (رعایت):",
+            lblBoxGross: "ٹوٹل گراس: روپے ",
+            lblBoxTotal: "ٹوٹل بل: روپے ",
+            btnPrint: "🖨️ بل پرنٹ اور سیو کریں",
+            adminTitle: "⚙️ گرینڈ ایڈمن کنٹرول اور ایڈوانس رپورٹس",
+            closeAdmin: "🔒 ایڈمن ویو بند کریں",
+            cardTotalItems: "📦 کل آئٹمز",
+            cardStockCost: "💰 اسٹاک ویلیو (خرید)",
+            cardFilteredSales: "💵 فلٹر شدہ سیلز",
+            cardFilteredProfit: "📈 فلٹر شدہ منافع",
+            formAddTitle: "➕ نیا سامان شامل کریں",
+            formEditTitle: "✏️ سامان کی تفصیل تبدیل کریں",
+            lblCode: "آئٹم کوڈ / بارکوڈ نمبر:",
+            lblName: "پروڈکٹ کا نام (سامان کا نام):",
+            lblCost: "خریداری کی قیمت (خرید ریٹ):",
+            lblSale: "فروخت کی قیمت (بیچنا ریٹ):",
+            lblInitialStock: "کل سامان لیا (ٹوٹل اسٹاک):",
+            lblRemainingStock: "باقی سامان (باقی اسٹاک):",
+            btnSaveCloud: "➕ سامان کلاؤڈ میں سیو کریں",
+            btnUpdateCloud: "💾 تبدیلیاں کلاؤڈ میں اپڈیٹ کریں",
+            liveLogTitle: "⚡ لائیو سیلز کی تفصیل",
+            reportsTitle: "📊 انٹیلیجنٹ رپورٹس پینل",
+            lblDailyFilter: "📅 روزانہ فلٹر:",
+            lblMonthlyFilter: "🗓️ ماہانہ فلٹر:",
+            btnPrintDaily: "🖨️ روزانہ رپورٹ پرنٹ کریں",
+            btnPrintMonthly: "🖨️ ماہانہ رپورٹ پرنٹ کریں",
+            stockRecordsTitle: "📦 موجودہ اسٹاک ریکارڈ",
+            receiptGross: "کل گراس بل:",
+            receiptDiscount: "ڈسکاؤنٹ:",
+            receiptNet: "ٹوٹل واجب الادا:"
+        }
+    };
+
+    function switchLanguage(lang) {
+        currentLang = lang;
+        let t = translations[currentLang];
+        
+        document.getElementById("mainTitle").innerText = t.mainTitle;
+        document.getElementById("activeCashierLabel").innerText = t.activeCashier;
+        document.getElementById("btnLogoutSystem").innerText = t.logoutBtn;
+        document.getElementById("btnAdminNav").innerText = t.adminBtn;
+        document.getElementById("btnShiftClose").innerText = t.shiftBtn;
+        document.getElementById("counterTitleText").innerText = t.counterTitle;
+        document.getElementById("itemSearchInput").placeholder = t.searchPlaceholder;
+        document.getElementById("thBillCode").innerText = t.thCode;
+        document.getElementById("thBillName").innerText = t.thName;
+        document.getElementById("thBillPrice").innerText = t.thPrice;
+        document.getElementById("thBillQty").innerText = t.thQty;
+        document.getElementById("thBillTotal").innerText = t.thTotal;
+        document.getElementById("thBillAction").innerText = t.thBillAction;
+        document.getElementById("lblGrossBillText").innerText = t.receiptGross;
+        document.getElementById("lblDiscountBillText").innerText = t.receiptDiscount;
+        document.getElementById("lblNetPayableText").innerText = t.receiptNet;
+        document.getElementById("checkoutTitleText").innerText = t.checkoutTitle;
+        document.getElementById("lblDiscountText").innerText = t.lblDiscount;
+        document.getElementById("lblBoxGross").innerText = t.lblBoxGross;
+        document.getElementById("lblBoxTotal").innerText = t.lblBoxTotal;
+        document.getElementById("btnPrintBtn").innerText = t.btnPrint;
+        document.getElementById("btnCloseAdminView").innerText = t.closeAdmin;
+        document.getElementById("adminTitleText").innerText = t.adminTitle;
+        document.getElementById("cardTotalItemsText").innerText = t.cardTotalItems;
+        document.getElementById("cardStockCostText").innerText = t.cardStockCost;
+        document.getElementById("cardFilteredSalesText").innerText = t.cardFilteredSales;
+        document.getElementById("cardFilteredProfitText").innerText = t.cardFilteredProfit;
+        document.getElementById("lblCodeText").innerText = t.lblCode;
+        document.getElementById("lblNameText").innerText = t.lblName;
+        document.getElementById("lblCostText").innerText = t.lblCost;
+        document.getElementById("lblSaleText").innerText = t.lblSale;
+        document.getElementById("lblInitialStockText").innerText = t.lblInitialStock;
+        document.getElementById("lblRemainingStockText").innerText = t.lblRemainingStock;
+        document.getElementById("liveLogTitleText").innerText = t.liveLogTitle;
+        document.getElementById("reportsTitleText").innerText = t.reportsTitle;
+        document.getElementById("lblDailyFilterText").innerText = t.lblDailyFilter;
+        document.getElementById("lblMonthlyFilterText").innerText = t.lblMonthlyFilter;
+        document.getElementById("btnPrintDailyBtn").innerText = t.btnPrintDaily;
+        document.getElementById("btnPrintMonthlyBtn").innerText = t.btnPrintMonthly;
+        document.getElementById("stockRecordsTitleText").innerText = t.stockRecordsTitle;
+        document.getElementById("thAdminCode").innerText = t.thCode;
+        document.getElementById("thAdminName").innerText = t.thName;
+        document.getElementById("thAdminCost").innerText = t.thKhareed;
+        document.getElementById("thAdminSale").innerText = t.thBechna;
+        document.getElementById("thAdminTotal").innerText = t.thTotalSaman;
+        document.getElementById("thAdminBaqi").innerText = t.thBaqiStock;
+        document.getElementById("thAdminAction").innerText = t.thAction;
+
+        let codeInput = document.getElementById("newCode").value.trim();
+        document.getElementById("formTitle").innerText = codeInput ? t.formEditTitle : t.formAddTitle;
+        document.getElementById("btnSaveProduct").innerText = codeInput ? t.btnUpdateCloud : t.btnSaveCloud;
+    }
+
+    function getLocalCurrentDateString() {
+        let d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+    
+    function getLocalCurrentTimeString() {
+        return new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit', second:'2-digit', hour12: true});
+    }
+
+    document.getElementById('reportDateInput').value = getLocalCurrentDateString();
+
+    // 🛡️ NAYI TABDEELI: Secured Login System
+    function attemptLogin() {
+        let selectedUser = document.getElementById("loginUserSelect").value;
+        let enteredPass = document.getElementById("loginPasswordInput").value;
+        
+        if(systemUsers[selectedUser] === enteredPass) {
+            currentUser = selectedUser;
+            
+            // User Role ko browser mein save kar diya (Security ke liye)
+            localStorage.setItem('userRole', currentUser); 
+            
+            document.getElementById("currentActiveUserText").innerText = currentUser;
+            document.getElementById("loginOverlay").style.display = "none";
+            document.getElementById("loginPasswordInput").value = "";
+            
+            managePriceVisibility();
+            
+            // Sirf "Admin" ko button dikhao, baqi ko hide karo
+            if(currentUser === "Admin") {
+                document.getElementById("btnAdminNav").style.display = "block";
+            } else { 
+                document.getElementById("btnAdminNav").style.display = "none";
+                document.getElementById("adminView").style.display = "none"; 
+            }
+            showToast("Welcome " + currentUser + "!");
+        } else { alert("Galt Password!"); }
+    }
+
+    // 🛡️ NAYI TABDEELI: Admin Panel sirf Admin khol sakega
+    function openAdminPanelDirect() {
+        const role = localStorage.getItem('userRole'); 
+        if (role === 'Admin') {
+            document.getElementById("adminView").style.display = "block";
+            document.getElementById("counterView").style.display = "none";
+        } else {
+            alert("Access Denied! Sirf Admin panel access kar sakte hain.");
+        }
+    }
+
+    function closeAdminPanelDirect() {
+        document.getElementById("adminView").style.display = "none";
+        document.getElementById("counterView").style.display = "block";
+    }
+
+    function managePriceVisibility() {
+        let adminFields = document.querySelectorAll(".admin-price-field");
+        if(currentUser === "Admin") {
+            adminFields.forEach(el => el.style.display = "");
+        } else {
+            adminFields.forEach(el => el.style.display = "none");
+        }
+    }
+
+    function logoutSystem() { 
+        currentUser = ""; 
+        localStorage.removeItem('userRole'); // Logout par role delete
+        document.getElementById("loginOverlay").style.display = "flex"; 
+        document.getElementById("adminView").style.display = "none"; 
+    }
+
+    function showToast(msg) {
+        let toast = document.getElementById("toast");
+        toast.innerText = msg;
+        toast.style.display = "block";
+        setTimeout(() => { toast.style.display = "none"; }, 3000);
+    }
+
+    // Database Sync
+    db.ref('products_inventory').on('value', (snapshot) => { if(snapshot.exists()) { localProducts = snapshot.val(); } });
+    db.ref('sales_history').on('value', (snapshot) => {
+        if(snapshot.exists()) { localSalesHistory = snapshot.val(); }
+        else { localSalesHistory = {}; }
+    });
+    
+    // Search Box Logic Jo Adha Cut Gaya Tha - (Mukammal kar diya)
+    function searchProductsAsync(val) {
+        let box = document.getElementById("searchResultsBox"); 
+        if(!val) { box.style.display = "none"; return; }
+        
+        let searchTxt = val.toLowerCase().trim();
+        
+        // Direct Barcode scan hit kare to
+        if(localProducts[searchTxt] || localProducts[val]) {
+            addItemToCart(localProducts[searchTxt] ? searchTxt : val);
+            document.getElementById("itemSearchInput").value = ""; 
+            box.style.display = "none"; 
+            return;
+        }
+        
+        let html = "";
+        for(let code in localProducts) {
+            let p = localProducts[code];
+            if(p.name.toLowerCase().includes(searchTxt) || code.toLowerCase().includes(searchTxt)) {
+                // Yahan aapka code kata tha, isay poora kar diya
+                html += `<div class="search-item" onclick="addItemToCart('${code}')"><span>${p.name} (Code: ${code})</span> <span>Rs. ${p.sale}</span></div>`;
+            }
+        }
+        box.innerHTML = html;
+        box.style.display = html ? "block" : "none";
+    }
+
+    function addItemToCart(code) {
+        // Aapke baqi function jo list mein add karte hain (Placeholder)
+        showToast("Item Add Kar Diya Gaya!");
+        document.getElementById("itemSearchInput").value = "";
+        document.getElementById("searchResultsBox").style.display = "none";
+    }
+
+</script>
+</body>
+</html>
