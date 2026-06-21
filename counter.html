@@ -5,12 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Al Khadim Mart - POS System</title>
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #0f172a; margin: 0; padding: 20px; color: #f8fafc; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; margin: 0; padding: 20px; color: #f8fafc; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #1e293b; padding-bottom: 10px; }
-        .header h1 { margin: 0; color: #38bdf8; }
+        .header h1 { margin: 0; color: #38bdf8; font-size: 24px; }
         .box { background: #1e293b; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
         input, button, select { padding: 10px; margin: 5px 0; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: white; font-size: 15px; }
-        button { cursor: pointer; font-weight: bold; border: none; }
+        button { cursor: pointer; font-weight: bold; border: none; transition: 0.2s; }
+        button:hover { opacity: 0.9; }
         .btn-green { background: #10b981; color: white; }
         .btn-blue { background: #3b82f6; color: white; }
         .btn-red { background: #ef4444; color: white; }
@@ -26,7 +27,7 @@
         @media print {
             body * { visibility: hidden; }
             .print-active-target, .print-active-target * { visibility: visible; }
-            .print-active-target { position: absolute; left: 0; top: 0; width: 100%; background: white !important; color: black !important; }
+            .print-active-target { position: absolute; left: 0; top: 0; width: 100%; background: white !important; color: black !important; padding: 0 !important; margin: 0 !important; }
         }
     </style>
 </head>
@@ -56,8 +57,11 @@
     </div>
 
     <div id="counterView" class="box" style="display:none; border-top: 4px solid #10b981;">
-        <h3 style="color:#10b981; margin-top:0;">🛒 Counter Bill Items</h3>
-        <input type="text" id="barcodeInput" placeholder="🔍 Saman ka NAAM likhein ya Barcode scan karein..." style="width: 100%; box-sizing: border-box;" onkeypress="checkEnter(event)">
+        <h3 style="color:#10b981; margin-top:0;">🛒 Counter & Billing</h3>
+        <div style="display:flex; gap:10px;">
+            <input type="text" id="barcodeInput" placeholder="🔍 Saman ka NAAM likhein ya Barcode scan karein..." style="flex-grow: 1; box-sizing: border-box;" onkeypress="checkEnter(event)">
+            <button class="btn-blue" onclick="manualSearch()">Search</button>
+        </div>
         
         <table>
             <thead>
@@ -79,18 +83,28 @@
     </div>
 
     <div id="adminView" class="box" style="display:none; border-top: 4px solid #ef4444;">
-        <h2 style="color:#ef4444; margin-top:0;">🛡️ Admin Dashboard & Reports</h2>
+        <h2 style="color:#ef4444; margin-top:0; margin-bottom: 20px;">🛡️ Admin Dashboard & Reports</h2>
         
-        <div style="background: #0f172a; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+        <div style="background: #0f172a; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #10b981;">
+            <h3 style="margin-top:0; color:#10b981;">➕ Naya Saman Add Karein (Add Product)</h3>
+            <div style="display:flex; gap:10px; flex-wrap: wrap;">
+                <input type="text" id="newProdName" placeholder="Item Name (e.g. Sugar 1kg)" style="flex-grow: 1;">
+                <input type="number" id="newProdCost" placeholder="Khareed Price (Cost)" style="width: 150px;">
+                <input type="number" id="newProdSale" placeholder="Sale Price" style="width: 150px;">
+                <button class="btn-green" style="padding:10px 20px;" onclick="addProduct()">Save Product</button>
+            </div>
+        </div>
+
+        <div style="background: #0f172a; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #38bdf8;">
             <h3 style="margin-top:0; color:#38bdf8;">📊 Generate Sales Report</h3>
             
             <div style="display:flex; gap:15px; margin-bottom:15px; flex-wrap: wrap;">
                 <div>
-                    <label style="font-size: 13px; color: #94a3b8; display:block;">📅 Start Date (Shuru Ki Tareekh):</label>
+                    <label style="font-size: 13px; color: #94a3b8; display:block;">📅 Start Date (Shuru):</label>
                     <input type="date" id="reportStartDateInput">
                 </div>
                 <div>
-                    <label style="font-size: 13px; color: #94a3b8; display:block;">📅 End Date (Aakhri Tareekh):</label>
+                    <label style="font-size: 13px; color: #94a3b8; display:block;">📅 End Date (Khatam):</label>
                     <input type="date" id="reportEndDateInput">
                 </div>
             </div>
@@ -104,14 +118,15 @@
                 <p style="text-align:center; font-size:13px; margin-bottom:15px;" id="printReportMeta"></p>
                 <hr style="border:1px dashed black;">
                 
-                <table style="width:100%; font-size:15px; margin-top:10px; margin-bottom:10px;">
+                <table style="width:100%; font-size:15px; margin-top:10px; margin-bottom:10px; color: black;">
                     <tr><td><strong>Total Invoiced Bills:</strong></td><td style="text-align:right;" id="prTotalBills">0</td></tr>
                     <tr><td><strong>Total Gross Sales:</strong></td><td style="text-align:right; font-weight:bold;" id="prSales">Rs. 0</td></tr>
+                    <tr><td><strong>Estimated Profit:</strong></td><td style="text-align:right; font-weight:bold;" id="prProfit">Rs. 0</td></tr>
                 </table>
                 
                 <hr style="border:1px dashed black;">
-                <h4 style="margin:15px 0 5px 0;">👤 Cashier Wise Sales Breakdown:</h4>
-                <table style="width:100%; font-size:14px; border-collapse: collapse;">
+                <h4 style="margin:15px 0 5px 0; color: black;">👤 Cashier Wise Sales Breakdown:</h4>
+                <table style="width:100%; font-size:14px; border-collapse: collapse; color: black;">
                     <thead>
                         <tr style="border-bottom:2px solid black; text-align:left;">
                             <th style="background:none; color:black; padding:5px 0;">Cashier Name</th>
@@ -122,23 +137,40 @@
                         </tbody>
                 </table>
                 <hr style="border:1px dashed black; margin-top:20px;">
-                <p style="text-align:center; font-size:12px; margin-top:10px;">Al Khadim POS System - Generated Report</p>
+                <p style="text-align:center; font-size:12px; margin-top:10px; color: black;">Al Khadim POS System - Generated Report</p>
+            </div>
+        </div>
+
+        <div style="background: #0f172a; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b;">
+            <h3 style="margin-top:0; color:#f8fafc;">📦 Current Stock / Products List</h3>
+            <div style="max-height: 400px; overflow-y: auto;">
+                <table>
+                    <thead style="position: sticky; top: 0; z-index: 1;">
+                        <tr>
+                            <th>Item Name</th>
+                            <th>Khareed (Cost)</th>
+                            <th>Sale Price</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stockTableBody"></tbody>
+                </table>
             </div>
         </div>
     </div>
 
-    <div id="billPrintArea" style="display:none; background:white; color:black; padding:20px; width:300px;">
+    <div id="billPrintArea" style="display:none; background:white; color:black; padding:20px; width:80mm; font-family: monospace;">
         <h2 style="text-align:center; margin:0; font-size:18px;">Al Khadim Mart</h2>
         <p style="text-align:center; font-size:12px; margin:0;">Invoice / Bill</p>
-        <p style="text-align:center; font-size:12px;" id="billDateText"></p>
+        <p style="text-align:center; font-size:12px; margin-bottom: 10px;" id="billDateText"></p>
         <hr style="border:1px dashed black;">
-        <table style="width:100%; font-size:12px;">
-            <thead><tr><th style="text-align:left;">Item</th><th style="text-align:center;">Qty</th><th style="text-align:right;">Total</th></tr></thead>
+        <table style="width:100%; font-size:12px; color: black; margin: 10px 0;">
+            <thead><tr><th style="text-align:left; padding:2px; background:none; color:black;">Item</th><th style="text-align:center; padding:2px; background:none; color:black;">Qty</th><th style="text-align:right; padding:2px; background:none; color:black;">Total</th></tr></thead>
             <tbody id="billPrintTableBody"></tbody>
         </table>
         <hr style="border:1px dashed black;">
-        <h3 style="text-align:right; margin:5px 0;">Total: Rs. <span id="billPrintTotal"></span></h3>
-        <p style="text-align:center; font-size:11px; margin-top:10px;">Cashier: <span id="billCashierName"></span><br>Thank you for shopping!</p>
+        <h3 style="text-align:right; margin:10px 0; font-size: 16px;">Net Total: Rs. <span id="billPrintTotal"></span></h3>
+        <p style="text-align:center; font-size:11px; margin-top:15px;">Cashier: <span id="billCashierName"></span><br>Thank you for shopping!</p>
     </div>
 
     <script>
@@ -147,16 +179,14 @@
         let currentUser = "";
         let cart = [];
         
-        // Dummy local products array for testing (Aap apna database connect rakh sakte hain)
-        let products = [
-            { id: "101", name: "Sugar 1kg", price: 150 },
-            { id: "102", name: "Flour 10kg", price: 1200 },
-            { id: "103", name: "Cooking Oil 1L", price: 450 }
+        // Database in LocalStorage
+        let products = JSON.parse(localStorage.getItem("martProducts")) || [
+            { id: "101", name: "Sugar 1kg", cost: 140, price: 150 },
+            { id: "102", name: "Flour 10kg", cost: 1100, price: 1200 }
         ];
-
-        // Local Storage se Sales History uthana
         let localSalesHistory = JSON.parse(localStorage.getItem("martSalesHistory")) || [];
 
+        // ================= LOGIN LOGIC =================
         function attemptLogin() {
             let selectedUser = document.getElementById("loginUserSelect").value;
             let enteredPass = document.getElementById("loginPasswordInput").value;
@@ -167,16 +197,17 @@
                 document.getElementById("loginOverlay").style.display = "none";
                 document.getElementById("loginPasswordInput").value = "";
                 
-                // Admin Login Check
+                // Route user to correct screen
                 if(currentUser === "Admin") {
                     document.getElementById("adminView").style.display = "block";
                     document.getElementById("counterView").style.display = "none";
+                    updateStockTable(); // Admin view data load
                 } else {
                     document.getElementById("adminView").style.display = "none";
                     document.getElementById("counterView").style.display = "block";
                 }
             } else {
-                alert("Galt Password!");
+                alert("Galt Password! Kripya sahi password darj karein.");
             }
         }
 
@@ -189,20 +220,34 @@
             updateCartTable();
         }
 
+        // ================= COUNTER (SALESMAN) LOGIC =================
         function checkEnter(e) {
             if(e.key === "Enter") {
-                let val = document.getElementById("barcodeInput").value.toLowerCase();
-                let found = products.find(p => p.name.toLowerCase().includes(val) || p.id === val);
-                if(found) { addToCart(found.id, found.name, found.price); } 
-                else { alert("Item nahi mila!"); }
+                manualSearch();
+            }
+        }
+        
+        function manualSearch() {
+            let val = document.getElementById("barcodeInput").value.toLowerCase().trim();
+            if(val === "") return;
+            
+            let found = products.find(p => p.name.toLowerCase().includes(val) || p.id === val);
+            if(found) { 
+                addToCart(found.id, found.name, found.price, found.cost); 
                 document.getElementById("barcodeInput").value = "";
+            } 
+            else { 
+                alert("Item nahi mila! Nam ki spelling check karein."); 
             }
         }
 
-        function addToCart(id, name, price) {
-            let existing = cart.find(c => c.id === id);
-            if(existing) { existing.qty++; } 
-            else { cart.push({ id, name, price, qty: 1 }); }
+        function addToCart(id, name, price, cost) {
+            let existing = cart.find(c => c.id === id || c.name === name);
+            if(existing) { 
+                existing.qty++; 
+            } else { 
+                cart.push({ id, name, price, cost: (cost || price), qty: 1 }); 
+            }
             updateCartTable();
         }
 
@@ -222,9 +267,9 @@
                     <td>${c.name}</td>
                     <td>Rs. ${c.price}</td>
                     <td>
-                        <button class="btn-blue" style="padding:2px 8px; margin-right:5px;" onclick="changeQty(${index}, -1)">-</button>
-                        ${c.qty}
-                        <button class="btn-blue" style="padding:2px 8px; margin-left:5px;" onclick="changeQty(${index}, 1)">+</button>
+                        <button class="btn-blue" style="padding:2px 8px; margin-right:5px; border-radius:4px;" onclick="changeQty(${index}, -1)">-</button>
+                        <span style="display:inline-block; width:20px; text-align:center;">${c.qty}</span>
+                        <button class="btn-blue" style="padding:2px 8px; margin-left:5px; border-radius:4px;" onclick="changeQty(${index}, 1)">+</button>
                     </td>
                     <td>Rs. ${total}</td>
                     <td><button class="btn-red" style="padding:5px 10px;" onclick="cart.splice(${index}, 1); updateCartTable();">X</button></td>
@@ -243,20 +288,28 @@
         }
 
         function checkoutBill() {
-            if(cart.length === 0) return alert("Cart khali hai!");
+            if(cart.length === 0) return alert("Cart khali hai! Pehle saman add karein.");
             
-            let netTotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            let netTotal = 0;
+            let totalCost = 0;
+            cart.forEach(item => {
+                netTotal += (item.price * item.qty);
+                totalCost += ((item.cost || item.price) * item.qty);
+            });
+            
+            let profit = netTotal - totalCost;
             let billDate = getTodayDate();
+            let timestamp = new Date().getTime();
             
             // Save to History
-            let billRecord = { date: billDate, cashier: currentUser, total: netTotal, items: cart };
+            let billRecord = { id: timestamp, date: billDate, cashier: currentUser, total: netTotal, profit: profit, items: cart };
             localSalesHistory.push(billRecord);
             localStorage.setItem("martSalesHistory", JSON.stringify(localSalesHistory));
 
             // Prepare Print Area
             let printHtml = "";
             cart.forEach(c => {
-                printHtml += `<tr><td style="text-align:left;">${c.name}</td><td style="text-align:center;">${c.qty}</td><td style="text-align:right;">${c.price * c.qty}</td></tr>`;
+                printHtml += `<tr><td style="text-align:left; padding:2px; color:black;">${c.name}</td><td style="text-align:center; padding:2px; color:black;">${c.qty}</td><td style="text-align:right; padding:2px; color:black;">${c.price * c.qty}</td></tr>`;
             });
             
             document.getElementById("billPrintTableBody").innerHTML = printHtml;
@@ -264,18 +317,61 @@
             document.getElementById("billCashierName").innerText = currentUser;
             document.getElementById("billDateText").innerText = "Date: " + billDate;
             
-            // Print
+            // Print Action
             let printArea = document.getElementById("billPrintArea");
             printArea.classList.add("print-active-target");
             window.print();
             printArea.classList.remove("print-active-target");
             
-            // Reset
+            // Reset Cart
             cart = [];
             updateCartTable();
         }
 
-        // ================= REPORTS & ADMIN LOGIC =================
+        // ================= ADMIN & REPORTS LOGIC =================
+        function addProduct() {
+            let name = document.getElementById("newProdName").value.trim();
+            let cost = document.getElementById("newProdCost").value;
+            let price = document.getElementById("newProdSale").value;
+            
+            if(!name || !price) {
+                return alert("Saman ka naam aur Sale Price likhna zaroori hai!");
+            }
+            
+            let newId = "PRD" + new Date().getTime().toString().slice(-5);
+            products.push({ id: newId, name: name, cost: parseFloat(cost || price), price: parseFloat(price) });
+            
+            localStorage.setItem("martProducts", JSON.stringify(products));
+            
+            document.getElementById("newProdName").value = "";
+            document.getElementById("newProdCost").value = "";
+            document.getElementById("newProdSale").value = "";
+            
+            updateStockTable();
+            alert("Saman add ho gaya!");
+        }
+
+        function deleteProduct(index) {
+            if(confirm("Kya aap waqai is item ko delete karna chahte hain?")) {
+                products.splice(index, 1);
+                localStorage.setItem("martProducts", JSON.stringify(products));
+                updateStockTable();
+            }
+        }
+
+        function updateStockTable() {
+            let html = "";
+            products.forEach((p, i) => {
+                html += `<tr>
+                    <td>${p.name}</td>
+                    <td>Rs. ${p.cost || p.price}</td>
+                    <td><strong>Rs. ${p.price}</strong></td>
+                    <td><button class="btn-red" style="padding:5px 10px;" onclick="deleteProduct(${i})">Delete</button></td>
+                </tr>`;
+            });
+            document.getElementById("stockTableBody").innerHTML = html;
+        }
+
         function generateCashierReportByDateRange() {
             let startDate = document.getElementById("reportStartDateInput").value;
             let endDate = document.getElementById("reportEndDateInput").value;
@@ -286,6 +382,7 @@
             }
             
             let totalSales = 0;
+            let totalProfit = 0;
             let totalBills = 0;
             let cashierData = {};
             
@@ -293,7 +390,10 @@
                 if(bill.date >= startDate && bill.date <= endDate) {
                     totalBills++;
                     let billTotal = parseFloat(bill.total || 0);
+                    let bProf = parseFloat(bill.profit || 0);
+                    
                     totalSales += billTotal;
+                    totalProfit += bProf;
                     
                     let cName = bill.cashier || "Unknown";
                     if(cashierData[cName]) { cashierData[cName] += billTotal; } 
@@ -305,6 +405,7 @@
             document.getElementById("printReportMeta").innerText = `Date Range: ${startDate} To ${endDate}`;
             document.getElementById("prTotalBills").innerText = totalBills;
             document.getElementById("prSales").innerText = "Rs. " + totalSales;
+            document.getElementById("prProfit").innerText = "Rs. " + totalProfit;
             
             let html = "";
             for(let name in cashierData) {
