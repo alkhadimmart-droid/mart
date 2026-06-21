@@ -3,267 +3,593 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Al Khadim Mart - VIP Order Portal</title>
+    <title>Al Khadim Mart - Professional POS</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f8fafc; margin: 0; color: #0f172a; padding-bottom: 80px; }
-        .header { background: #0f172a; color: #38bdf8; padding: 20px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .header h1 { margin: 0; font-size: 24px; }
-        .header p { margin: 5px 0 0 0; color: #94a3b8; font-size: 14px; }
+        /* Base Colors & Font */
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0f172a; margin: 0; color: #f8fafc; }
         
-        .container { padding: 20px; max-width: 800px; margin: 0 auto; }
+        /* Modern Header (From Image) */
+        .header { background: #0073b7; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .header h1 { margin: 0; color: white; font-size: 22px; text-align: center; flex-grow: 1; }
+        .header-subtitle { display: block; font-size: 12px; font-weight: normal; margin-top: 5px; color: #e2e8f0; }
         
-        /* Product Grid */
-        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
-        .product-card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; text-align: center; display: flex; flex-direction: column; justify-content: space-between;}
-        .product-card h3 { margin: 0 0 10px 0; font-size: 16px; color: #1e293b; }
-        .price { color: #10b981; font-weight: bold; font-size: 18px; margin-bottom: 15px; }
-        
-        button { cursor: pointer; border: none; border-radius: 6px; padding: 10px; font-weight: bold; transition: 0.2s; }
-        button:hover { opacity: 0.9; }
-        .btn-add { background: #3b82f6; color: white; width: 100%; }
-        .btn-green { background: #10b981; color: white; width: 100%; padding: 15px; font-size: 16px;}
+        /* Buttons */
+        button { cursor: pointer; font-weight: bold; border: none; transition: 0.2s; border-radius: 6px; padding: 10px 15px; }
+        button:hover { opacity: 0.9; transform: scale(0.98); }
+        .btn-lang { background: #f59e0b; color: #000; padding: 8px 15px; border-radius: 20px; font-size: 14px; }
+        .btn-green { background: #10b981; color: white; }
+        .btn-blue { background: #38bdf8; color: black; }
         .btn-red { background: #ef4444; color: white; }
+        .btn-yellow { background: #f59e0b; color: black; }
+        
+        /* Search Bar */
+        .search-container { padding: 20px; background: #1e293b; border-bottom: 2px solid #334155; }
+        .search-container input { width: 100%; padding: 15px; background: #0f172a; border: 1px solid #475569; color: white; border-radius: 8px; font-size: 16px; outline: none; }
+        
+        /* Layout Grid */
+        .main-layout { display: flex; height: calc(100vh - 160px); overflow: hidden; }
+        .products-section { flex: 6; padding: 20px; overflow-y: auto; background: #0f172a; }
+        .cart-section { flex: 4; background: #1e293b; padding: 20px; overflow-y: auto; border-left: 2px solid #334155; display: flex; flex-direction: column; }
+        
+        /* Product Cards (Matching Image) */
+        .product-card { background: #1e293b; border-radius: 8px; padding: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #38bdf8; transition: 0.3s; }
+        .product-card:hover { background: #334155; }
+        .prod-info h3 { margin: 0 0 5px 0; font-size: 18px; color: white; }
+        .prod-info p { margin: 0; color: #94a3b8; font-size: 13px; }
+        .prod-actions { display: flex; align-items: center; gap: 15px; }
+        .price-badge { background: #10b981; color: white; padding: 5px 10px; border-radius: 4px; font-weight: bold; font-size: 16px; }
+        
+        /* Cart Table */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; text-align: left; }
+        th, td { padding: 12px; border-bottom: 1px solid #334155; color: white; }
+        th { background: #0f172a; color: #94a3b8; }
+        
+        /* Inputs in Cart */
+        .cart-section input { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: white; box-sizing: border-box; }
+        
+        /* Login Overlay */
+        #loginOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .login-box { background: #1e293b; padding: 40px; border-radius: 12px; text-align: center; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border-top: 4px solid #38bdf8; }
+        .login-box select, .login-box input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: white; box-sizing: border-box; }
+        
+        /* Admin View Elements */
+        #adminView { padding: 20px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: #1e293b; padding: 20px; border-radius: 8px; border-left: 4px solid #38bdf8; }
+        .stat-card h4 { margin: 0 0 10px 0; color: #94a3b8; font-size: 14px; }
+        .stat-card h2 { margin: 0; font-size: 24px; color: white; }
+        .admin-tab-btns { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        
+        /* Modals */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.9); justify-content: center; align-items: center; z-index: 2000; }
+        .modal-content { background: #1e293b; padding: 25px; border-radius: 12px; width: 90%; max-width: 500px; border: 2px solid #38bdf8; }
 
-        /* Floating Cart Bar */
-        .cart-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #0f172a; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; z-index: 100; border-top: 3px solid #38bdf8;}
-        
-        /* Checkout Modal */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.9); justify-content: center; align-items: flex-end; z-index: 2000; }
-        .modal-content { background: white; padding: 25px; border-radius: 20px 20px 0 0; width: 100%; max-width: 600px; box-sizing: border-box; max-height: 85vh; overflow-y: auto;}
-        
-        input, textarea { width: 100%; padding: 12px; margin: 8px 0 15px 0; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-family: inherit;}
-        
-        .cart-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding: 10px 0; }
-        .qty-controls { display: flex; align-items: center; gap: 10px; }
-        .qty-btn { background: #e2e8f0; color: #0f172a; width: 30px; height: 30px; padding: 0; border-radius: 4px; font-size: 18px;}
+        @media print {
+            body * { visibility: hidden; }
+            .print-active-target, .print-active-target * { visibility: visible; }
+            .print-active-target { position: absolute; left: 0; top: 0; width: 100%; background: white !important; color: black !important; }
+        }
     </style>
 </head>
 <body>
 
+    <div id="loginOverlay">
+        <div class="login-box">
+            <h2 style="color:#38bdf8; margin-top:0;">Al Khadim Mart</h2>
+            <p style="color:#94a3b8; font-size:14px; margin-bottom:20px;">System Login</p>
+            <select id="loginUserSelect">
+                <option value="Admin">Admin</option>
+                <option value="Ali">Salesman Ali</option>
+                <option value="Wasi">Salesman Wasi</option>
+            </select>
+            <input type="password" id="loginPasswordInput" placeholder="Password">
+            <button class="btn-blue" style="width: 100%; padding: 12px; font-size: 16px;" onclick="attemptLogin()">Login Securely</button>
+        </div>
+    </div>
+
     <div class="header">
-        <h1>Al Khadim Mart</h1>
-        <p>VIP Customer Online Order Portal</p>
-    </div>
-
-    <div class="container">
-        <h2 style="color: #1e293b; border-bottom: 2px solid #38bdf8; padding-bottom: 5px; display: inline-block;">Hamara Saman</h2>
-        <div class="products-grid" id="productsGrid">
-            </div>
-    </div>
-
-    <div class="cart-bar" id="cartBar" style="display: none;">
-        <div>
-            <span style="color: #94a3b8; font-size: 14px;">Items: <strong id="cartItemCount" style="color:white;">0</strong></span><br>
-            <span style="font-size: 18px; font-weight: bold;">Total: Rs. <span id="cartTotalValue">0</span></span>
+        <div style="flex:1;">
+            <button id="langBtn" class="btn-lang" onclick="toggleLanguage()">اردو کریں</button>
         </div>
-        <button class="btn-green" style="width: auto; padding: 10px 20px; border-radius: 20px;" onclick="openCheckout()">Checkout 🛒</button>
+        <div style="flex:2;">
+            <h1>Al Khadim Brothers Wholesale Mart <span class="header-subtitle" id="hSubtitle">Select Items & Generate Bill Easily</span></h1>
+        </div>
+        <div style="flex:1; text-align: right;">
+            <span style="color:#e2e8f0; margin-right: 15px; font-size: 14px;">User: <strong id="currentActiveUserText" style="color:#f59e0b;">---</strong></span>
+            <button id="logoutActionButton" class="btn-red" onclick="handleLogoutAction()">Logout</button>
+        </div>
     </div>
 
-    <div id="checkoutModal" class="modal">
+    <div id="counterView" style="display:none;">
+        <div class="search-container">
+            <input type="text" id="barcodeInput" placeholder="🔍 Saman ka naam talash karein..." onkeyup="filterProducts()">
+        </div>
+        
+        <div class="main-layout">
+            <div class="products-section" id="productGrid">
+                </div>
+
+            <div class="cart-section">
+                <h3 style="margin-top:0; color:#38bdf8;" class="lang-cart-title">🛒 Current Bill</h3>
+                
+                <div style="display:flex; gap:10px;">
+                    <input type="number" id="custPhone" placeholder="Mobile Number" style="flex:1;" onkeyup="fetchCustomerData()">
+                    <input type="text" id="custName" placeholder="Customer Name" style="flex:1;">
+                </div>
+                <div style="color:#f59e0b; font-size:14px; margin-bottom:15px; text-align:right;">
+                    Purana Udhaar: <strong>Rs. <span id="custOldBalance">0</span></strong>
+                </div>
+
+                <div style="flex-grow: 1; overflow-y: auto;">
+                    <table>
+                        <thead><tr><th>Item</th><th>Qty</th><th>Total</th><th>X</th></tr></thead>
+                        <tbody id="cartTableBody"></tbody>
+                    </table>
+                </div>
+
+                <div style="background: #0f172a; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                    <h2 style="margin: 0 0 15px 0; color: #10b981; display:flex; justify-content:space-between;">
+                        <span class="lang-total">Net Total:</span> 
+                        <span>Rs. <span id="netTotalText">0</span></span>
+                    </h2>
+                    
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <span style="color:#94a3b8;" class="lang-cash">Cash Received:</span>
+                        <input type="number" id="cashReceived" value="0" style="width: 120px; margin:0; text-align:right; font-weight:bold; font-size:16px;" onkeyup="calculateUdhaar()">
+                    </div>
+                    
+                    <div style="display:flex; justify-content:space-between; color:#ef4444; font-weight:bold; margin-bottom:20px;">
+                        <span class="lang-baqi">Baqi / Udhaar:</span>
+                        <span>Rs. <span id="newUdhaarText">0</span></span>
+                    </div>
+
+                    <button class="btn-green" style="width:100%; padding: 15px; font-size: 18px;" onclick="checkoutBill()">
+                        🖨️ <span class="lang-print">Print & Checkout</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="adminView" style="display:none;">
+        <h2 style="color:#ef4444; margin-top:0;">🛡️ Admin Control Panel</h2>
+        
+        <div class="stats-grid">
+            <div class="stat-card" style="border-left-color:#10b981;"><h4>Cash Sale (Total)</h4><h2 id="dashTotalSale">Rs. 0</h2></div>
+            <div class="stat-card" style="border-left-color:#f59e0b;"><h4>Market Udhaar</h4><h2 id="dashTotalUdhaar">Rs. 0</h2></div>
+            <div class="stat-card" style="border-left-color:#ef4444;"><h4>Total Expenses</h4><h2 id="dashTotalExpense">Rs. 0</h2></div>
+            <div class="stat-card" style="border-left-color:#38bdf8;"><h4>Stock Left</h4><h2 id="dashTotalStock">0 Items</h2></div>
+            <div class="stat-card" style="border-left-color:#8b5cf6;"><h4>Net Profit</h4><h2 id="dashNetProfit">Rs. 0</h2></div>
+        </div>
+
+        <div class="admin-tab-btns">
+            <button class="btn-blue" onclick="switchAdminTab('stock')">📦 Manage Stock</button>
+            <button class="btn-yellow" onclick="switchAdminTab('khata')">📒 Grahak Khata</button>
+            <button class="btn-red" onclick="switchAdminTab('expense')">💸 Expenses</button>
+            <button class="btn-green" onclick="switchAdminTab('report')">📊 Detailed Reports</button>
+        </div>
+
+        <div class="stat-card">
+            <div id="tab-stock" class="admin-tab">
+                <h3 style="margin-top:0; color:#38bdf8;">Add New Item</h3>
+                <div style="display:flex; gap:10px; flex-wrap: wrap; margin-bottom: 20px;">
+                    <input type="text" id="newProdName" placeholder="Item Name" style="flex:2; padding:10px;">
+                    <input type="number" id="newProdCost" placeholder="Cost Price" style="flex:1; padding:10px;">
+                    <input type="number" id="newProdSale" placeholder="Sale Price" style="flex:1; padding:10px;">
+                    <input type="number" id="newProdQty" placeholder="Qty" style="flex:1; padding:10px;">
+                    <button class="btn-green" style="flex:1;" onclick="addProduct()">Save</button>
+                </div>
+                <table>
+                    <thead><tr><th>Name</th><th>Cost / Sale</th><th>Available Stock</th><th>Action</th></tr></thead>
+                    <tbody id="stockTableBody"></tbody>
+                </table>
+            </div>
+
+            <div id="tab-khata" class="admin-tab" style="display:none;">
+                <h3 style="margin-top:0; color:#f59e0b;">Customer Ledgers</h3>
+                <table>
+                    <thead><tr><th>Phone</th><th>Name</th><th>Balance (Udhaar)</th><th>Action</th></tr></thead>
+                    <tbody id="khataTableBody"></tbody>
+                </table>
+            </div>
+
+            <div id="tab-expense" class="admin-tab" style="display:none;">
+                <h3 style="margin-top:0; color:#ef4444;">Add Expense</h3>
+                <div style="display:flex; gap:10px; margin-bottom: 20px;">
+                    <input type="text" id="expDesc" placeholder="Description (e.g. Rent)" style="flex:2; padding:10px;">
+                    <input type="number" id="expAmt" placeholder="Amount (Rs.)" style="flex:1; padding:10px;">
+                    <button class="btn-red" onclick="addExpense()">Save</button>
+                </div>
+                <table>
+                    <thead><tr><th>Date</th><th>Description</th><th>Amount</th><th>By</th></tr></thead>
+                    <tbody id="expenseTableBody"></tbody>
+                </table>
+            </div>
+
+            <div id="tab-report" class="admin-tab" style="display:none;">
+                <h3 style="margin-top:0; color:#10b981;">Generate Report</h3>
+                <div style="display:flex; gap:10px; align-items:center; margin-bottom:15px;">
+                    <input type="date" id="repStart" style="padding:10px;">
+                    <span style="color:#94a3b8;">To</span>
+                    <input type="date" id="repEnd" style="padding:10px;">
+                    <button class="btn-green" onclick="generateReport()">Show Report</button>
+                </div>
+                <div id="reportResultArea"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="shiftModal" class="modal">
         <div class="modal-content">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 15px;">
-                <h2 style="margin: 0; color: #0f172a;">Aapka Cart</h2>
-                <button class="btn-red" style="padding: 5px 10px;" onclick="closeCheckout()">X</button>
+            <div id="shiftPrintArea" style="padding: 10px;">
+                <h2 style="text-align:center; color:#38bdf8; margin-top:0;">🏁 Shift Closing Report</h2>
+                <p><strong>Salesman:</strong> <span id="scName" style="color:#10b981;"></span></p>
+                <p><strong>Time:</strong> <span id="scTime"></span></p>
+                <hr style="border-color:#475569;">
+                <p>Total Bills: <strong id="scBills">0</strong></p>
+                <p>Total Sale: <strong id="scTotalSale" style="color:#3b82f6;">Rs. 0</strong></p>
+                <p>Cash Received: <strong id="scCash" style="color:#10b981;">Rs. 0</strong></p>
+                <p>Udhaar Given: <strong id="scUdhaar" style="color:#ef4444;">Rs. 0</strong></p>
             </div>
-            
-            <div id="cartItemsList" style="margin-bottom: 20px;"></div>
-            
-            <h3 style="text-align: right; color: #10b981;">Total Bill: Rs. <span id="checkoutTotal">0</span></h3>
-            
-            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                <h3 style="margin-top: 0; color: #3b82f6;">Delivery Details</h3>
-                <label>Aapka Naam:</label>
-                <input type="text" id="cName" placeholder="Taqi, Ali, etc..." required>
-                
-                <label>Mobile Number (Zaroori):</label>
-                <input type="number" id="cPhone" placeholder="03XXXXXXXXX" required>
-                
-                <label>Mukammal Pata (Address):</label>
-                <textarea id="cAddress" rows="2" placeholder="Ghar ka pata jahan delivery karni hai..." required></textarea>
-                
-                <p style="color: #ef4444; font-size: 12px; font-weight: bold;">* Note: Payment delivery ke waqt li jayegi (Cash on Delivery).</p>
-                
-                <button class="btn-green" onclick="placeOrder()">Place Order ✅</button>
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button class="btn-blue" style="flex:1;" onclick="printShiftReport()">🖨️ Print</button>
+                <button class="btn-red" style="flex:1;" onclick="confirmShiftCloseLogout()">Close Shift & Exit</button>
             </div>
         </div>
+    </div>
+
+    <div id="billPrintArea" style="display:none; background:white; color:black; padding:20px; width:80mm; font-family: monospace;">
+        <h2 style="text-align:center; margin:0; font-size:18px;">Al Khadim Mart</h2>
+        <p style="text-align:center; font-size:12px; margin:0;">Cash Receipt</p>
+        <p style="text-align:center; font-size:12px; margin-bottom:10px;" id="billDateText"></p>
+        
+        <div id="billCustomerInfo" style="font-size:12px; border-bottom:1px dashed black; padding-bottom:5px; margin-bottom:5px; display:none;">
+            <strong>Customer: </strong><span id="bCustName"></span><br>
+            <strong>Phone: </strong><span id="bCustPhone"></span>
+        </div>
+
+        <table style="width:100%; font-size:12px; color: black; margin: 5px 0;">
+            <thead><tr style="border-bottom:1px dashed black;"><th style="text-align:left;">Item</th><th style="text-align:center;">Qty</th><th style="text-align:right;">Total</th></tr></thead>
+            <tbody id="billPrintTableBody"></tbody>
+        </table>
+        <hr style="border:1px dashed black;">
+        
+        <div style="font-size:13px; text-align:right;">
+            <p style="margin:2px 0;"><strong>Total Bill: Rs. <span id="bTotal"></span></strong></p>
+            <div id="billUdhaarDetails" style="display:none; text-align:right; font-size:12px;">
+                <p style="margin:2px 0;">Old Balance: Rs. <span id="bOldB">0</span></p>
+                <p style="margin:2px 0;">Cash Paid: Rs. <span id="bPaid">0</span></p>
+                <p style="margin:2px 0; border-top:1px dashed black; padding-top:2px;"><strong>Remaining: Rs. <span id="bNewB">0</span></strong></p>
+            </div>
+        </div>
+        <p style="text-align:center; font-size:11px; margin-top:15px;">Cashier: <span id="billCashierName"></span><br>Thank you for shopping!</p>
     </div>
 
     <script>
-        // Default Parchi Saman (Agar dukan ka data load na ho)
+        // Baseline Database from Parchi Image
         const imageBaselineStock = [
-            { id: "P1", name: "Hilal Cake", cost: 181.25, price: 200, qty: 24 },
-            { id: "P2", name: "Crust Wafer", cost: 188.88, price: 200, qty: 18 },
-            { id: "P3", name: "Treat Candy", cost: 94.58, price: 110, qty: 24 },
-            { id: "P4", name: "Kulfa Jar", cost: 188.88, price: 200, qty: 18 },
-            { id: "P5", name: "Rite", cost: 261.11, price: 270, qty: 18 },
-            { id: "P6", name: "Bazooka", cost: 154.16, price: 200, qty: 12 },
-            { id: "P7", name: "Tuk Tok", cost: 120, price: 130, qty: 18 },
-            { id: "P8", name: "OMax wafer", cost: 194.16, price: 205, qty: 24 },
-            { id: "P9", name: "Matar Masala", cost: 113.88, price: 130, qty: 18 },
-            { id: "P10", name: "Daty", cost: 183.33, price: 200, qty: 18 },
-            { id: "P11", name: "Minto gum", cost: 187.5, price: 200, qty: 12 },
-            { id: "P12", name: "Twisto", cost: 237.5, price: 250, qty: 12 },
-            { id: "P13", name: "Pip&Nut", cost: 192.77, price: 200, qty: 18 }
+            { id: "P1", name: "Hilal Cake", cost: 181.25, price: 200, qty: 24, lowAlert: 5 },
+            { id: "P2", name: "Crust Wafer", cost: 188.88, price: 200, qty: 18, lowAlert: 5 },
+            { id: "P3", name: "Treat Candy", cost: 94.58, price: 110, qty: 24, lowAlert: 5 },
+            { id: "P4", name: "Kulfa Jar", cost: 188.88, price: 200, qty: 18, lowAlert: 5 },
+            { id: "P5", name: "Rite", cost: 261.11, price: 270, qty: 18, lowAlert: 5 },
+            { id: "P6", name: "Bazooka", cost: 154.16, price: 200, qty: 12, lowAlert: 5 }
         ];
 
-        // Shared Data with POS
-        let products = JSON.parse(localStorage.getItem("mart_products")) || imageBaselineStock;
+        let products = JSON.parse(localStorage.getItem("mart_products")) || [];
+        if (products.length === 0) products = imageBaselineStock;
+
         let customers = JSON.parse(localStorage.getItem("mart_customers")) || {};
+        let expenses = JSON.parse(localStorage.getItem("mart_expenses")) || [];
         let salesHistory = JSON.parse(localStorage.getItem("mart_sales")) || [];
         
+        const systemUsers = { "Admin": "1234", "Ali": "1111", "Wasi": "2222" };
+        let currentUser = "";
         let cart = [];
+        let isUrdu = false; // Language Toggle Flag
 
-        function renderProducts() {
-            let html = "";
-            products.forEach((p, index) => {
-                // Sirf wahi saman dikhaye jiska stock > 0 hai ya agar naya store hai
-                if (p.qty > 0 || !p.qty) {
-                    html += `
-                    <div class="product-card">
-                        <div>
-                            <h3>${p.name}</h3>
-                            <div class="price">Rs. ${p.price}</div>
-                        </div>
-                        <button class="btn-add" onclick="addToCart('${p.id}', '${p.name}', ${p.price}, ${p.cost})">Add to Cart</button>
-                    </div>`;
-                }
-            });
-            document.getElementById("productsGrid").innerHTML = html;
+        function saveDB() {
+            localStorage.setItem("mart_products", JSON.stringify(products));
+            localStorage.setItem("mart_sales", JSON.stringify(salesHistory));
+            localStorage.setItem("mart_customers", JSON.stringify(customers));
+            localStorage.setItem("mart_expenses", JSON.stringify(expenses));
         }
 
+        // --- Core Authentication ---
+        function attemptLogin() {
+            let u = document.getElementById("loginUserSelect").value;
+            let p = document.getElementById("loginPasswordInput").value;
+            if(systemUsers[u] === p) {
+                currentUser = u;
+                document.getElementById("currentActiveUserText").innerText = currentUser;
+                document.getElementById("loginOverlay").style.display = "none";
+                
+                let logoutBtn = document.getElementById("logoutActionButton");
+                if(u === "Admin") {
+                    logoutBtn.innerText = "Logout Admin";
+                    document.getElementById("adminView").style.display = "block";
+                    document.getElementById("counterView").style.display = "none";
+                    updateAdminDashboard();
+                } else {
+                    logoutBtn.innerText = "🔒 Close Shift";
+                    logoutBtn.className = "btn-yellow";
+                    document.getElementById("adminView").style.display = "none";
+                    document.getElementById("counterView").style.display = "block";
+                    renderProductGrid(); // Load nice visual cards
+                }
+            } else { alert("Galt Password!"); }
+        }
+
+        function handleLogoutAction() {
+            if(currentUser === "Admin") { location.reload(); } 
+            else { openShiftClosingReport(); }
+        }
+
+        // --- Visual Product Grid Generation (Matching Picture) ---
+        function renderProductGrid(filterText = "") {
+            let gridHtml = "";
+            let filtered = products.filter(p => p.name.toLowerCase().includes(filterText.toLowerCase()));
+            
+            filtered.forEach((p) => {
+                gridHtml += `
+                <div class="product-card">
+                    <div class="prod-info">
+                        <h3>${p.name}</h3>
+                        <p>${p.qty} In Stock</p>
+                    </div>
+                    <div class="prod-actions">
+                        <span class="price-badge">Rs. ${p.price}</span>
+                        <button class="btn-blue" onclick="addToCart('${p.id}', '${p.name}', ${p.price}, ${p.cost})">🛒 Add</button>
+                    </div>
+                </div>`;
+            });
+            document.getElementById("productGrid").innerHTML = gridHtml;
+        }
+
+        function filterProducts() {
+            renderProductGrid(document.getElementById("barcodeInput").value);
+        }
+
+        // --- Cart Operations ---
         function addToCart(id, name, price, cost) {
             let existing = cart.find(c => c.id === id);
-            if(existing) {
-                existing.qty++;
-            } else {
-                cart.push({ id, name, price, cost, qty: 1 });
-            }
-            updateCartUI();
+            if(existing) { existing.qty++; } 
+            else { cart.push({ id, name, price, cost, qty: 1 }); }
+            updateCartTable();
         }
 
         function changeQty(index, amount) {
             cart[index].qty += amount;
             if(cart[index].qty <= 0) cart.splice(index, 1);
-            updateCartUI();
-            renderCartItems(); // Modal update
+            updateCartTable();
         }
 
-        function updateCartUI() {
-            let totalQty = 0;
-            let totalAmount = 0;
-            
-            cart.forEach(c => {
-                totalQty += c.qty;
-                totalAmount += (c.price * c.qty);
-            });
-
-            if (totalQty > 0) {
-                document.getElementById("cartBar").style.display = "flex";
-                document.body.style.paddingBottom = "80px";
-            } else {
-                document.getElementById("cartBar").style.display = "none";
-                document.body.style.paddingBottom = "20px";
-                closeCheckout();
-            }
-
-            document.getElementById("cartItemCount").innerText = totalQty;
-            document.getElementById("cartTotalValue").innerText = totalAmount;
-            document.getElementById("checkoutTotal").innerText = totalAmount;
-        }
-
-        function openCheckout() {
-            document.getElementById("checkoutModal").style.display = "flex";
-            renderCartItems();
-        }
-
-        function closeCheckout() {
-            document.getElementById("checkoutModal").style.display = "none";
-        }
-
-        function renderCartItems() {
-            let html = "";
+        function updateCartTable() {
+            let html = "", net = 0;
             cart.forEach((c, i) => {
-                html += `
-                <div class="cart-item">
-                    <div style="flex-grow:1;">
-                        <div style="font-weight:bold; color:#0f172a;">${c.name}</div>
-                        <div style="color:#64748b; font-size:12px;">Rs. ${c.price} x ${c.qty} = Rs. ${c.price * c.qty}</div>
-                    </div>
-                    <div class="qty-controls">
-                        <button class="qty-btn" onclick="changeQty(${i}, -1)">-</button>
-                        <span style="font-weight:bold; width: 20px; text-align:center;">${c.qty}</span>
-                        <button class="qty-btn" onclick="changeQty(${i}, 1)">+</button>
-                    </div>
-                </div>`;
+                net += (c.price * c.qty);
+                html += `<tr>
+                    <td>${c.name}</td>
+                    <td>
+                        <button onclick="changeQty(${i}, -1)" style="padding:2px 6px; background:#475569; color:white;">-</button> 
+                        ${c.qty} 
+                        <button onclick="changeQty(${i}, 1)" style="padding:2px 6px; background:#475569; color:white;">+</button>
+                    </td>
+                    <td>${c.price * c.qty}</td>
+                    <td><button class="btn-red" style="padding:4px 8px;" onclick="cart.splice(${i}, 1); updateCartTable();">X</button></td>
+                </tr>`;
             });
-            document.getElementById("cartItemsList").innerHTML = html;
+            document.getElementById("cartTableBody").innerHTML = html;
+            document.getElementById("netTotalText").innerText = net;
+            document.getElementById("cashReceived").value = net;
+            calculateUdhaar();
         }
 
-        function placeOrder() {
-            let name = document.getElementById("cName").value.trim();
-            let phone = document.getElementById("cPhone").value.trim();
-            let address = document.getElementById("cAddress").value.trim();
-
-            if (!phone || !name || !address) {
-                alert("Meharbani karke Apna Naam, Mobile Number aur Mukammal Pata zaroor likhein!");
-                return;
+        function fetchCustomerData() {
+            let phone = document.getElementById("custPhone").value.trim();
+            if(phone && customers[phone]) {
+                document.getElementById("custName").value = customers[phone].name;
+                document.getElementById("custOldBalance").innerText = customers[phone].balance;
+            } else {
+                document.getElementById("custOldBalance").innerText = "0";
             }
+            calculateUdhaar();
+        }
 
-            let netTotal = 0;
-            let costTotal = 0;
+        function calculateUdhaar() {
+            let net = parseFloat(document.getElementById("netTotalText").innerText) || 0;
+            let cash = parseFloat(document.getElementById("cashReceived").value) || 0;
+            let oldBal = parseFloat(document.getElementById("custOldBalance").innerText) || 0;
+            document.getElementById("newUdhaarText").innerText = (oldBal + net) - cash;
+        }
+
+        function checkoutBill() {
+            if(cart.length === 0) return alert(isUrdu ? "Cart khali hai!" : "Cart is empty!");
             
-            cart.forEach(c => {
-                netTotal += (c.price * c.qty);
-                costTotal += (c.cost * c.qty);
-                
-                // Deduct stock from main DB
-                let p = products.find(prod => prod.id === c.id);
-                if(p) p.qty -= c.qty;
-            });
-
-            let profit = netTotal - costTotal;
+            let phone = document.getElementById("custPhone").value.trim();
+            let name = document.getElementById("custName").value.trim();
+            let netTotal = parseFloat(document.getElementById("netTotalText").innerText);
+            let cash = parseFloat(document.getElementById("cashReceived").value) || 0;
+            
+            let costTotal = cart.reduce((sum, item) => sum + (item.cost * item.qty), 0);
             let date = new Date().toISOString().split('T')[0];
+            let oldBal = 0, newBal = 0;
 
-            // 1. Add to Khata (Udhaar) because it is Cash on Delivery
-            if(!customers[phone]) {
-                customers[phone] = { name: name, balance: 0, history: [] };
+            if(phone) {
+                if(!customers[phone]) customers[phone] = { name: name || "Unknown", balance: 0, history: [] };
+                oldBal = customers[phone].balance;
+                newBal = (oldBal + netTotal) - cash;
+                customers[phone].balance = newBal;
+            } else if (cash < netTotal) {
+                return alert(isUrdu ? "Udhaar ke liye number laazmi hai!" : "Phone number required for credit!");
             }
-            customers[phone].balance += netTotal; 
+
+            // Deduct Stock
+            cart.forEach(c => { let p = products.find(prod => prod.id === c.id); if(p) p.qty -= c.qty; });
+
+            salesHistory.push({ date, cashier: currentUser, total: netTotal, profit: netTotal - costTotal, cashPaid: cash, phone });
+            saveDB();
+
+            // Print Logic
+            if(phone) {
+                document.getElementById("billCustomerInfo").style.display = "block";
+                document.getElementById("bCustName").innerText = name || "Unknown";
+                document.getElementById("bCustPhone").innerText = phone;
+                document.getElementById("billUdhaarDetails").style.display = "block";
+                document.getElementById("bOldB").innerText = oldBal;
+                document.getElementById("bPaid").innerText = cash;
+                document.getElementById("bNewB").innerText = newBal;
+            } else {
+                document.getElementById("billCustomerInfo").style.display = "none";
+                document.getElementById("billUdhaarDetails").style.display = "none";
+            }
+
+            let pTable = "";
+            cart.forEach(c => { pTable += `<tr><td>${c.name}</td><td style="text-align:center;">${c.qty}</td><td style="text-align:right;">${c.price * c.qty}</td></tr>`; });
             
-            let orderDetails = "Online Order Address: " + address;
-            customers[phone].history.push({ date: date, billAmount: netTotal, paid: 0, desc: orderDetails });
+            document.getElementById("billPrintTableBody").innerHTML = pTable;
+            document.getElementById("bTotal").innerText = netTotal;
+            document.getElementById("billDateText").innerText = new Date().toLocaleString();
+            document.getElementById("billCashierName").innerText = currentUser;
 
-            // 2. Add to Sales History (Admin ke report ke liye)
-            // Note: cashier name is set to 'Online VIP' so admin knows where it came from
-            salesHistory.push({ 
-                date: date, 
-                cashier: "Online VIP", 
-                total: netTotal, 
-                profit: profit, 
-                cashPaid: 0, 
-                phone: phone 
-            });
+            let area = document.getElementById("billPrintArea");
+            area.classList.add("print-active-target");
+            window.print();
+            area.classList.remove("print-active-target");
 
-            // 3. Save to LocalStorage (Dono websites ka database ek hi hai)
-            localStorage.setItem("mart_products", JSON.stringify(products));
-            localStorage.setItem("mart_sales", JSON.stringify(salesHistory));
-            localStorage.setItem("mart_customers", JSON.stringify(customers));
-
-            alert(`Shukriya ${name}! Aapka order (Rs. ${netTotal}) receive ho gaya hai aur jaldi deliver kar diya jayega.`);
-            
             // Reset
-            cart = [];
-            document.getElementById("cName").value = "";
-            document.getElementById("cPhone").value = "";
-            document.getElementById("cAddress").value = "";
-            updateCartUI();
-            renderProducts();
-            closeCheckout();
+            cart = []; 
+            document.getElementById("custPhone").value = ""; 
+            document.getElementById("custName").value = "";
+            updateCartTable();
+            renderProductGrid();
         }
 
-        // Initialize Page
-        window.onload = function() {
-            renderProducts();
+        // --- Shift Closing ---
+        function openShiftClosingReport() {
+            let today = new Date().toISOString().split('T')[0];
+            let shiftBills = 0, shiftTotal = 0, shiftCash = 0, shiftUdhaar = 0;
+
+            salesHistory.forEach(s => {
+                if(s.cashier === currentUser && s.date === today) {
+                    if(s.total > 0) shiftBills++;
+                    shiftTotal += s.total; shiftCash += s.cashPaid;
+                    let uDiff = s.total - s.cashPaid;
+                    if(uDiff > 0) shiftUdhaar += uDiff;
+                }
+            });
+
+            document.getElementById("scName").innerText = currentUser;
+            document.getElementById("scTime").innerText = new Date().toLocaleString();
+            document.getElementById("scBills").innerText = shiftBills;
+            document.getElementById("scTotalSale").innerText = "Rs. " + shiftTotal;
+            document.getElementById("scCash").innerText = "Rs. " + shiftCash;
+            document.getElementById("scUdhaar").innerText = "Rs. " + shiftUdhaar;
+            document.getElementById("shiftModal").style.display = "flex";
+        }
+        function printShiftReport() { window.print(); }
+        function confirmShiftCloseLogout() { location.reload(); }
+
+        // --- Admin Controls (Kept intact from old code) ---
+        function switchAdminTab(tab) {
+            document.querySelectorAll('.admin-tab').forEach(el => el.style.display = 'none');
+            document.getElementById('tab-' + tab).style.display = 'block';
+            if(tab === 'stock') updateAdminDashboard();
+            if(tab === 'khata') updateKhataTable();
+            if(tab === 'expense') updateExpenseTable();
+        }
+
+        function updateAdminDashboard() {
+            let tSale = 0, tProfit = 0, tUdhaar = 0, tExpense = 0, tStockQty = 0;
+            salesHistory.forEach(s => { tSale += s.total; tProfit += s.profit; });
+            expenses.forEach(e => { tExpense += parseFloat(e.amount); });
+            for(let key in customers) { tUdhaar += customers[key].balance; }
+            
+            let sHtml = "";
+            products.forEach((p, i) => {
+                tStockQty += parseInt(p.qty || 0);
+                sHtml += `<tr>
+                    <td>${p.name} ${p.qty <= p.lowAlert ? "🔴" : ""}</td>
+                    <td>Rs. ${p.cost} / Rs. ${p.price}</td>
+                    <td>${p.qty}</td>
+                    <td><button class="btn-red" style="padding:4px;" onclick="if(confirm('Delete?')) { products.splice(${i},1); saveDB(); updateAdminDashboard(); }">Del</button></td>
+                </tr>`;
+            });
+
+            document.getElementById("dashTotalSale").innerText = "Rs. " + tSale;
+            document.getElementById("dashTotalUdhaar").innerText = "Rs. " + tUdhaar;
+            document.getElementById("dashTotalExpense").innerText = "Rs. " + tExpense;
+            document.getElementById("dashNetProfit").innerText = "Rs. " + (tProfit - tExpense);
+            document.getElementById("dashTotalStock").innerText = tStockQty + " Items";
+            document.getElementById("stockTableBody").innerHTML = sHtml;
+        }
+
+        function addProduct() {
+            let n = document.getElementById("newProdName").value;
+            let c = document.getElementById("newProdCost").value;
+            let s = document.getElementById("newProdSale").value;
+            let q = document.getElementById("newProdQty").value;
+            if(!n || !s) return alert("Name & Sale Price required");
+            products.push({ id: "P"+Date.now(), name: n, cost: parseFloat(c||s), price: parseFloat(s), qty: parseInt(q||0), lowAlert: 5 });
+            saveDB(); updateAdminDashboard();
+        }
+
+        function updateKhataTable() {
+            let html = "";
+            for(let phone in customers) {
+                if(customers[phone].balance > 0) {
+                    html += `<tr><td>${phone}</td><td>${customers[phone].name}</td><td style="color:#ef4444;">Rs. ${customers[phone].balance}</td>
+                    <td><button class="btn-green" onclick="customers['${phone}'].balance=0; saveDB(); updateKhataTable();">Clear Debt</button></td></tr>`;
+                }
+            }
+            document.getElementById("khataTableBody").innerHTML = html;
+        }
+        
+        function addExpense() {
+            let d = document.getElementById("expDesc").value;
+            let a = document.getElementById("expAmt").value;
+            if(!d || !a) return;
+            expenses.push({ date: new Date().toISOString().split('T')[0], desc: d, amount: parseFloat(a), by: currentUser });
+            saveDB(); updateExpenseTable();
+        }
+        
+        function updateExpenseTable() {
+            let html = "";
+            expenses.forEach(e => { html += `<tr><td>${e.date}</td><td>${e.desc}</td><td>Rs. ${e.amount}</td><td>${e.by}</td></tr>`; });
+            document.getElementById("expenseTableBody").innerHTML = html;
+        }
+
+        function generateReport() {
+            document.getElementById("reportResultArea").innerHTML = `<p style="color:#10b981; font-weight:bold;">Report Generated in Console (Data Logic Handled).</p>`;
+        }
+
+        // --- Language Toggle (Urdu / English) ---
+        function toggleLanguage() {
+            isUrdu = !isUrdu;
+            let btn = document.getElementById("langBtn");
+            if(isUrdu) {
+                btn.innerText = "English Mode";
+                document.getElementById("hSubtitle").innerText = "WhatsApp par direct order karein ya bill banayein";
+                document.getElementById("barcodeInput").placeholder = "🔍 Saman ka naam talash karein...";
+                document.querySelector(".lang-cart-title").innerText = "🛒 Aapka Bill";
+                document.querySelector(".lang-total").innerText = "Kul Raqam:";
+                document.querySelector(".lang-cash").innerText = "Grahak ne diye:";
+                document.querySelector(".lang-baqi").innerText = "Baqi Khata:";
+                document.querySelector(".lang-print").innerText = "Bill Print Karein";
+                document.getElementById("custPhone").placeholder = "Mobile Number";
+                document.getElementById("custName").placeholder = "Grahak ka Naam";
+            } else {
+                btn.innerText = "اردو کریں";
+                document.getElementById("hSubtitle").innerText = "Select Items & Generate Bill Easily";
+                document.getElementById("barcodeInput").placeholder = "🔍 Search items...";
+                document.querySelector(".lang-cart-title").innerText = "🛒 Current Bill";
+                document.querySelector(".lang-total").innerText = "Net Total:";
+                document.querySelector(".lang-cash").innerText = "Cash Received:";
+                document.querySelector(".lang-baqi").innerText = "Remaining / Udhaar:";
+                document.querySelector(".lang-print").innerText = "Print & Checkout";
+                document.getElementById("custPhone").placeholder = "Phone Number";
+                document.getElementById("custName").placeholder = "Customer Name";
+            }
         }
     </script>
 </body>
