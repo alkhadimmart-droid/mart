@@ -227,7 +227,7 @@
                 date: new Date().toISOString().split('T')[0],
                 cashier: "Online Portal (" + cName + ")",
                 total: parseFloat(finalSum),
-                profit: 0, // Customer screen cannot calculate profit logic
+                profit: 0, 
                 cashPaid: 0, 
                 phone: cPhone
             });
@@ -247,14 +247,14 @@
             });
             
             msgText += `-----------------------------\n`;
-            msgText += `*Total Bill Amount:* Rs. ${finalSum}\n`;
-            msgText += `Status: Pending Verification`;
+            msgText += `*Total Bill Amount:* Rs. ${finalSum}\n\n`;
+            msgText += `Kindly process my order. Thank you!`;
 
-            // Open WhatsApp link
-            let secureUrl = "https://wa.me/?text=" + encodeURIComponent(msgText);
+            // Open WhatsApp link with your specific number (+923109538410)
+            let secureUrl = "https://wa.me/923109538410?text=" + encodeURIComponent(msgText);
             window.open(secureUrl, '_blank');
 
-            alert(languageUrduActive ? "Order kamyabi se submit ho gaya!" : "Your order has been submitted successfully!");
+            alert(languageUrduActive ? "Order WhatsApp par redirect kar diya gaya hai!" : "Order redirected to WhatsApp successfully!");
             
             // Clear Dashboard Form
             customerCart = [];
