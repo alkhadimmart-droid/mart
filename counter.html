@@ -85,8 +85,7 @@
             </div>
             <hr style="border-color:#475569;">
             <div style="display:flex; flex-direction:column; gap:10px; margin-top:15px;">
-                <button class="btn-green" style="padding: 14px; font-size: 16px; box-shadow: 0 4px 10px rgba(16,185,129,0.2);" onclick="printAndCloseShift()">🖨️ Print Report & Close Shift</button>
-                <button class="btn-red" style="padding: 6px; font-size: 12px; background: transparent; border: 1px solid #ef4444; color: #ef4444;" onclick="confirmShiftCloseLogout()">Bina Print Kiye Exit Karein</button>
+                <button class="btn-green" style="padding: 16px; font-size: 18px; box-shadow: 0 4px 10px rgba(16,185,129,0.2);" onclick="printAndCloseShift()">🖨️ Print Report & Close Shift</button>
             </div>
         </div>
     </div>
@@ -404,11 +403,6 @@
             }, 500);
         }
 
-        function confirmShiftCloseLogout() {
-            document.getElementById("shiftModal").style.display = "none";
-            location.reload();
-        }
-
         function manualSearch() {
             let val = document.getElementById("barcodeInput").value.toLowerCase().trim();
             if(val === "") return;
@@ -632,7 +626,6 @@
             document.getElementById("expenseTableBody").innerHTML = html;
         }
 
-        // Quick dates handling Month as well as Yearly selection bounds perfectly
         function setQuickDates() {
             let month = document.getElementById("repMonthSelect").value;
             let year = document.getElementById("repYearSelect").value || new Date().getFullYear();
@@ -641,7 +634,6 @@
                 let lastDay = new Date(year, parseInt(month), 0).getDate();
                 document.getElementById("repEnd").value = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
             } else {
-                // If no month is selected, make it a Full Yearly Custom Range Filter
                 document.getElementById("repStart").value = `${year}-01-01`;
                 document.getElementById("repEnd").value = `${year}-12-31`;
             }
