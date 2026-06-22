@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Al Khadim Mart - Full POS System</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0f172a; margin: 0; padding: 20px; color: #f8fafc; transition: background 0.3s ease; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #1e293b; padding-bottom: 10px; }
@@ -302,32 +306,75 @@
     </div>
 
     <script>
-        let products = JSON.parse(localStorage.getItem("mart_products")) || [];
+        // ==========================================
+        // 🚀 FIREBASE SETUP 🚀
+        // Niche diye gaye firebaseConfig ko apne Firebase wale code se Badaal dein!
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            databaseURL: "YOUR_DATABASE_URL",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
         
-        products.forEach(p => {
-            p.cost = parseFloat(p.cost) || 0;
-            p.price = parseFloat(p.price) || 0;
-            p.bought = parseInt(p.bought) || parseInt(p.qty) || 0;
-            p.sold = parseInt(p.sold) || 0;
-            p.qty = p.bought - p.sold;
-            p.lowAlert = parseInt(p.lowAlert) || 5;
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.database();
+
+        // Data Arrays
+        let products = [];
+        let customers = {};
+        let expenses = [];
+        let salesHistory = [];
+
+        // 🔄 SYNC DATA FROM FIREBASE (Cloud se data lana)
+        db.ref('AlKhadimPOS').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                products = data.products || [];
+                customers = data.customers || {};
+                expenses = data.expenses || [];
+                salesHistory = data.salesHistory || [];
+            }
+            
+            // Format Products Data
+            products.forEach(p => {
+                p.cost = parseFloat(p.cost) || 0;
+                p.price = parseFloat(p.price) || 0;
+                p.bought = parseInt(p.bought) || parseInt(p.qty) || 0;
+                p.sold = parseInt(p.sold) || 0;
+                p.qty = p.bought - p.sold;
+                p.lowAlert = parseInt(p.lowAlert) || 5;
+            });
+
+            // Agar admin logged in hai, toh page automatically refresh ho jayega
+            if (currentUser === "Admin") {
+                updateAdminDashboard();
+                updateKhataTable();
+                updateExpenseTable();
+            }
         });
 
-        let customers = JSON.parse(localStorage.getItem("mart_customers")) || {};
-        let expenses = JSON.parse(localStorage.getItem("mart_expenses")) || [];
-        let salesHistory = JSON.parse(localStorage.getItem("mart_sales")) || [];
-        
+        // 💾 SAVE DATA TO FIREBASE (Cloud par data bhejna)
         function saveDB() {
-            localStorage.setItem("mart_products", JSON.stringify(products));
-            localStorage.setItem("mart_sales", JSON.stringify(salesHistory));
-            localStorage.setItem("mart_customers", JSON.stringify(customers));
-            localStorage.setItem("mart_expenses", JSON.stringify(expenses));
+            db.ref('AlKhadimPOS').set({
+                products: products,
+                customers: customers,
+                expenses: expenses,
+                salesHistory: salesHistory
+            });
         }
 
         const systemUsers = { "Admin": "1234", "Wasi": "1111", "Ubaid": "2222", "Yassin": "3333" };
         let currentUser = "";
         let cart = [];
 
+        // ==== LOGIN SYSTEM ====
         function attemptLogin() {
             let u = document.getElementById("loginUserSelect").value;
             let p = document.getElementById("loginPasswordInput").value;
@@ -340,7 +387,6 @@
                 let logoutBtn = document.getElementById("logoutActionButton");
                 
                 if(u === "Admin") {
-                    // Premium Ultra Dark Design Activator
                     document.body.classList.add("admin-mode-active");
                     document.getElementById("adminView").classList.add("admin-box");
                     document.getElementById("mainHeaderTitle").style.color = "#ff3333";
@@ -371,6 +417,7 @@
             else { openShiftClosingReport(); }
         }
 
+        // ==== SHIFT CLOSING ====
         function openShiftClosingReport() {
             let today = new Date().toISOString().split('T')[0];
             let shiftBills = 0, shiftTotal = 0, shiftCash = 0, shiftUdhaar = 0;
@@ -390,7 +437,6 @@
             document.getElementById("shiftModal").style.display = "flex";
         }
 
-        // Cashier prints report and shift automatically logs out seamlessly
         function printAndCloseShift() {
             let area = document.getElementById("shiftPrintArea");
             area.classList.add("print-active-target");
@@ -403,6 +449,7 @@
             }, 500);
         }
 
+        // ==== COUNTER BILLING ====
         function manualSearch() {
             let val = document.getElementById("barcodeInput").value.toLowerCase().trim();
             if(val === "") return;
@@ -476,15 +523,21 @@
                 oldBal = customers[phone].balance;
                 newBal = (oldBal + netTotal) - cash;
                 customers[phone].balance = newBal;
+                if(!customers[phone].history) customers[phone].history = [];
                 customers[phone].history.push({ date, billAmount: netTotal, paid: cash });
             } else if (cash < netTotal) { return alert("Udhaar ke liye Mobile Number likhna zaroori hai!"); }
 
             cart.forEach(c => {
-                let p = products.find(prod => prod.id === c.id);
-                if(p) { p.sold = (parseInt(p.sold) || 0) + parseInt(c.qty); p.qty = (parseInt(p.bought) || 0) - p.sold; }
+                let pIndex = products.findIndex(prod => prod.id === c.id);
+                if(pIndex > -1) { 
+                    products[pIndex].sold = (parseInt(products[pIndex].sold) || 0) + parseInt(c.qty); 
+                    products[pIndex].qty = (parseInt(products[pIndex].bought) || 0) - products[pIndex].sold; 
+                }
             });
 
             salesHistory.push({ date, cashier: currentUser, total: netTotal, profit, cashPaid: cash, phone });
+            
+            // Firebase me Data bhej do
             saveDB();
 
             if(phone) {
@@ -512,9 +565,9 @@
 
             cart = []; document.getElementById("custPhone").value = ""; document.getElementById("custName").value = "";
             updateCartTable();
-            if(currentUser === "Admin") updateAdminDashboard();
         }
 
+        // ==== ADMIN PANEL FUNCTIONS (FIXED) ====
         function switchAdminTab(tab) {
             document.querySelectorAll('.admin-tab').forEach(el => el.style.display = 'none');
             document.getElementById('tab-' + tab).style.display = 'block';
@@ -524,154 +577,222 @@
         }
 
         function updateAdminDashboard() {
-            let tSale = 0, tProfit = 0, tUdhaar = 0, tExpense = 0, tStockQty = 0;
-            salesHistory.forEach(s => { tSale += s.total; tProfit += s.profit; });
-            expenses.forEach(e => { tExpense += parseFloat(e.amount); });
-            for(let key in customers) { tUdhaar += customers[key].balance; }
+            let totalSale = 0, totalUdhaar = 0, totalExp = 0, totalProfit = 0, totalStock = 0;
             
-            let sHtml = "";
+            salesHistory.forEach(s => {
+                totalSale += s.total || 0;
+                totalProfit += s.profit || 0;
+            });
+            
+            Object.values(customers).forEach(c => { totalUdhaar += c.balance || 0; });
+            expenses.forEach(e => { totalExp += parseFloat(e.amount) || 0; });
+            
+            totalProfit -= totalExp; // Net profit (Sale profit - Kharche)
+
+            let stockHtml = "";
             products.forEach((p, i) => {
-                tStockQty += parseInt(p.qty || 0);
-                let rowClass = (p.qty <= p.lowAlert) ? 'low-stock' : '';
-                sHtml += `<tr class="${rowClass}">
-                    <td>${p.name} ${p.qty <= p.lowAlert ? "⚠️(Low)" : ""}</td>
-                    <td>Rs. ${p.cost} / Rs. ${p.price}</td>
-                    <td style="font-weight:bold; color:#38bdf8;">${p.bought}</td>
-                    <td style="font-weight:bold; color:#f59e0b;">${p.sold}</td>
-                    <td style="font-weight:bold; color:#10b981;">${p.qty}</td>
+                totalStock += p.qty;
+                let rowClass = p.qty <= p.lowAlert ? "low-stock" : "";
+                stockHtml += `<tr class="${rowClass}">
+                    <td>${p.name}</td>
+                    <td>C: ${p.cost} | S: ${p.price}</td>
+                    <td style="color:#38bdf8;">${p.bought}</td>
+                    <td style="color:#f59e0b;">${p.sold}</td>
+                    <td style="color:#10b981; font-weight:bold;">${p.qty}</td>
                     <td>
-                        <button class="btn-yellow" onclick="addMoreStock(${i})">Add Stock</button> 
-                        <button class="btn-blue" onclick="openEditSection(${i})">📝 Edit</button>
-                    </td></tr>`;
+                        <button class="btn-blue" onclick="editProduct(${i})">Edit</button>
+                        <button class="btn-red" onclick="deleteProduct(${i})">X</button>
+                    </td>
+                </tr>`;
             });
 
-            document.getElementById("dashTotalSale").innerText = "Rs. " + tSale;
-            document.getElementById("dashTotalUdhaar").innerText = "Rs. " + tUdhaar;
-            document.getElementById("dashTotalExpense").innerText = "Rs. " + tExpense;
-            document.getElementById("dashNetProfit").innerText = "Rs. " + (tProfit - tExpense);
-            document.getElementById("dashTotalStock").innerText = tStockQty + " Items";
-            document.getElementById("stockTableBody").innerHTML = sHtml;
+            document.getElementById("dashTotalSale").innerText = "Rs. " + totalSale;
+            document.getElementById("dashTotalUdhaar").innerText = "Rs. " + totalUdhaar;
+            document.getElementById("dashTotalExpense").innerText = "Rs. " + totalExp;
+            document.getElementById("dashTotalStock").innerText = totalStock + " Items";
+            document.getElementById("dashNetProfit").innerText = "Rs. " + totalProfit;
+            document.getElementById("stockTableBody").innerHTML = stockHtml;
         }
 
         function addProduct() {
-            let name = document.getElementById("newProdName").value;
-            let cost = document.getElementById("newProdCost").value;
-            let price = document.getElementById("newProdSale").value;
-            let qty = document.getElementById("newProdQty").value;
-            let alertLevel = document.getElementById("newProdAlert").value || 5;
-            if(!name || !price) return alert("Name aur Sale Price lazmi hai.");
-            let qtyVal = parseInt(qty||0);
-            products.push({ id: "P"+Date.now(), name, cost: parseFloat(cost||price), price: parseFloat(price), qty: qtyVal, bought: qtyVal, sold: 0, lowAlert: parseInt(alertLevel) });
-            saveDB(); updateAdminDashboard();
-            document.getElementById("newProdName").value = ""; document.getElementById("newProdCost").value = ""; document.getElementById("newProdSale").value = ""; document.getElementById("newProdQty").value = "";
+            let name = document.getElementById("newProdName").value.trim();
+            let cost = parseFloat(document.getElementById("newProdCost").value);
+            let price = parseFloat(document.getElementById("newProdSale").value);
+            let qty = parseInt(document.getElementById("newProdQty").value);
+            let alert = parseInt(document.getElementById("newProdAlert").value) || 5;
+            
+            if(!name || isNaN(cost) || isNaN(price) || isNaN(qty)) return alert("Sari details bharein!");
+            
+            products.push({ id: Date.now().toString(), name, cost, price, bought: qty, sold: 0, qty, lowAlert: alert });
+            saveDB();
+            
+            document.getElementById("newProdName").value = "";
+            document.getElementById("newProdCost").value = "";
+            document.getElementById("newProdSale").value = "";
+            document.getElementById("newProdQty").value = "";
+            document.getElementById("newProdAlert").value = "";
+            updateAdminDashboard();
         }
 
-        function openEditSection(i) {
-            let p = products[i];
-            document.getElementById("editProdIndex").value = i; document.getElementById("editProdName").value = p.name; document.getElementById("editProdCost").value = p.cost; document.getElementById("editProdSale").value = p.price; document.getElementById("editProdBought").value = p.bought; document.getElementById("editProdSold").value = p.sold; document.getElementById("editProdAlert").value = p.lowAlert || 5;
+        function deleteProduct(index) {
+            if(confirm("Kiya waqiye delete karna chahte hain?")) {
+                products.splice(index, 1);
+                saveDB();
+                updateAdminDashboard();
+            }
+        }
+
+        function editProduct(index) {
+            let p = products[index];
+            document.getElementById("editProdIndex").value = index;
+            document.getElementById("editProdName").value = p.name;
+            document.getElementById("editProdCost").value = p.cost;
+            document.getElementById("editProdSale").value = p.price;
+            document.getElementById("editProdBought").value = p.bought;
+            document.getElementById("editProdSold").value = p.sold;
+            document.getElementById("editProdAlert").value = p.lowAlert;
             document.getElementById("editProdSection").style.display = "block";
-            window.scrollTo(0, 200);
+            window.scrollTo(0, 0);
         }
 
         function saveProductEdit() {
-            let i = document.getElementById("editProdIndex").value;
-            let name = document.getElementById("editProdName").value.trim();
-            let cost = parseFloat(document.getElementById("editProdCost").value) || 0;
-            let price = parseFloat(document.getElementById("editProdSale").value) || 0;
-            let bought = parseInt(document.getElementById("editProdBought").value) || 0;
-            let sold = parseInt(document.getElementById("editProdSold").value) || 0;
-            let lowAlert = parseInt(document.getElementById("editProdAlert").value) || 5;
-
-            products[i].name = name; products[i].cost = cost; products[i].price = price; products[i].bought = bought; products[i].sold = sold; products[i].qty = (bought - sold); products[i].lowAlert = lowAlert;
-            saveDB(); updateAdminDashboard();
-            document.getElementById("editProdSection").style.display = "none";
+            let index = document.getElementById("editProdIndex").value;
+            products[index].name = document.getElementById("editProdName").value;
+            products[index].cost = parseFloat(document.getElementById("editProdCost").value);
+            products[index].price = parseFloat(document.getElementById("editProdSale").value);
+            products[index].bought = parseInt(document.getElementById("editProdBought").value);
+            products[index].sold = parseInt(document.getElementById("editProdSold").value);
+            products[index].lowAlert = parseInt(document.getElementById("editProdAlert").value);
+            products[index].qty = products[index].bought - products[index].sold;
+            
+            saveDB();
+            cancelProductEdit();
+            updateAdminDashboard();
         }
 
-        function cancelProductEdit() { document.getElementById("editProdSection").style.display = "none"; }
-        
-        function addMoreStock(i) {
-            let q = prompt("Kitna naya stock aya hai?");
-            if(q && !isNaN(q)) { products[i].bought = (parseInt(products[i].bought) || 0) + parseInt(q); products[i].qty = products[i].bought - (parseInt(products[i].sold) || 0); saveDB(); updateAdminDashboard(); }
+        function cancelProductEdit() {
+            document.getElementById("editProdSection").style.display = "none";
         }
 
         function updateKhataTable() {
             let html = "";
             for(let phone in customers) {
                 if(customers[phone].balance > 0) {
-                    html += `<tr><td>${phone}</td><td>${customers[phone].name}</td><td style="color:red; font-weight:bold;">Rs. ${customers[phone].balance}</td><td><button class="btn-green" onclick="receiveUdhaar('${phone}')">Paise Jama Karein</button></td></tr>`;
+                    html += `<tr>
+                        <td>${phone}</td>
+                        <td>${customers[phone].name}</td>
+                        <td style="color:#ef4444; font-weight:bold;">Rs. ${customers[phone].balance}</td>
+                        <td><button class="btn-green" onclick="clearUdhaar('${phone}')">Clear Udhaar</button></td>
+                    </tr>`;
                 }
             }
-            document.getElementById("khataTableBody").innerHTML = html;
+            document.getElementById("khataTableBody").innerHTML = html || "<tr><td colspan='4'>Koi udhaar baqi nahi.</td></tr>";
         }
 
-        function receiveUdhaar(phone) {
-            let amt = prompt("Grahak ne kitne paise jama karwaye?");
-            if(amt && !isNaN(amt)) {
-                customers[phone].balance -= parseFloat(amt);
-                salesHistory.push({ date: new Date().toISOString().split('T')[0], cashier: currentUser, total: 0, profit: 0, cashPaid: parseFloat(amt), phone });
-                saveDB(); updateKhataTable(); updateAdminDashboard();
+        function clearUdhaar(phone) {
+            let amount = prompt(`Kitne paise wasool hue? (Total Baqi: ${customers[phone].balance})`);
+            if(amount && !isNaN(amount)) {
+                customers[phone].balance -= parseFloat(amount);
+                if(customers[phone].balance < 0) customers[phone].balance = 0;
+                saveDB();
+                updateKhataTable();
+                updateAdminDashboard();
             }
         }
 
         function addExpense() {
-            let desc = document.getElementById("expDesc").value; let amt = document.getElementById("expAmt").value;
-            if(!desc || !amt) return alert("Details bharein.");
-            expenses.push({ date: new Date().toISOString().split('T')[0], desc, amount: parseFloat(amt), by: currentUser });
-            saveDB(); updateExpenseTable(); updateAdminDashboard();
-            document.getElementById("expDesc").value = ""; document.getElementById("expAmt").value = "";
+            let desc = document.getElementById("expDesc").value;
+            let amount = parseFloat(document.getElementById("expAmt").value);
+            if(!desc || isNaN(amount)) return alert("Detail aur amount likhein!");
+            
+            expenses.push({
+                date: new Date().toISOString().split('T')[0],
+                desc: desc,
+                amount: amount,
+                by: currentUser
+            });
+            saveDB();
+            document.getElementById("expDesc").value = "";
+            document.getElementById("expAmt").value = "";
+            updateExpenseTable();
+            updateAdminDashboard();
         }
 
         function updateExpenseTable() {
-            let html = ""; expenses.forEach(e => { html += `<tr><td>${e.date}</td><td>${e.desc}</td><td>Rs. ${e.amount}</td><td>${e.by}</td></tr>`; });
+            let html = "";
+            expenses.forEach(e => {
+                html += `<tr><td>${e.date}</td><td>${e.desc}</td><td style="color:#ef4444;">Rs. ${e.amount}</td><td>${e.by}</td></tr>`;
+            });
             document.getElementById("expenseTableBody").innerHTML = html;
         }
 
         function setQuickDates() {
-            let month = document.getElementById("repMonthSelect").value;
-            let year = document.getElementById("repYearSelect").value || new Date().getFullYear();
-            if(month) {
-                document.getElementById("repStart").value = `${year}-${month}-01`;
-                let lastDay = new Date(year, parseInt(month), 0).getDate();
-                document.getElementById("repEnd").value = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
-            } else {
-                document.getElementById("repStart").value = `${year}-01-01`;
-                document.getElementById("repEnd").value = `${year}-12-31`;
+            let m = document.getElementById("repMonthSelect").value;
+            let y = document.getElementById("repYearSelect").value;
+            if(m && y) {
+                document.getElementById("repStart").value = `${y}-${m}-01`;
+                let lastDay = new Date(y, m, 0).getDate();
+                document.getElementById("repEnd").value = `${y}-${m}-${lastDay}`;
+            } else if (y) {
+                document.getElementById("repStart").value = `${y}-01-01`;
+                document.getElementById("repEnd").value = `${y}-12-31`;
             }
         }
 
         function generateReport() {
-            let sDate = document.getElementById("repStart").value; let eDate = document.getElementById("repEnd").value;
-            if(!sDate || !eDate) return alert("Tareekh select karein!");
-            let rSale = 0, rCash = 0, rProfit = 0, rExp = 0; let cashierData = {};
+            let start = document.getElementById("repStart").value;
+            let end = document.getElementById("repEnd").value;
+            if(!start || !end) return alert("Please select start and end date!");
+
+            let gross = 0, cashIn = 0, udhaarGiven = 0, expOut = 0;
+            let shifts = { "Admin": {b:0, s:0, c:0, u:0}, "Wasi": {b:0, s:0, c:0, u:0}, "Ubaid": {b:0, s:0, c:0, u:0}, "Yassin": {b:0, s:0, c:0, u:0} };
 
             salesHistory.forEach(s => {
-                if(s.date >= sDate && s.date <= eDate) {
-                    rSale += s.total; rCash += s.cashPaid; rProfit += s.profit;
-                    let c = s.cashier || "Unknown"; if(!cashierData[c]) cashierData[c] = { bills: 0, total: 0, cash: 0, udhaar: 0 };
-                    if(s.total > 0) cashierData[c].bills++;
-                    cashierData[c].total += s.total; cashierData[c].cash += s.cashPaid;
-                    let bUdh = s.total - s.cashPaid; if(bUdh > 0) cashierData[c].udhaar += bUdh;
+                if(s.date >= start && s.date <= end) {
+                    gross += s.total;
+                    cashIn += s.cashPaid;
+                    let u = s.total - s.cashPaid;
+                    if(u > 0) udhaarGiven += u;
+                    
+                    if(shifts[s.cashier]) {
+                        shifts[s.cashier].b++;
+                        shifts[s.cashier].s += s.total;
+                        shifts[s.cashier].c += s.cashPaid;
+                        shifts[s.cashier].u += (u > 0 ? u : 0);
+                    }
                 }
             });
-            expenses.forEach(e => { if(e.date >= sDate && e.date <= eDate) rExp += e.amount; });
 
-            document.getElementById("reportPrintArea").style.display = "block";
-            document.getElementById("repDateRange").innerText = `Report Duration: ${sDate} To ${eDate}`;
-            document.getElementById("rTotalSales").innerText = rSale; document.getElementById("rCashSales").innerText = rCash;
-            document.getElementById("rUdhaar").innerText = (rSale - rCash > 0) ? (rSale - rCash) : 0;
-            document.getElementById("rExpenses").innerText = rExp; document.getElementById("rNetProfit").innerText = rProfit - rExp;
+            expenses.forEach(e => { if(e.date >= start && e.date <= end) { expOut += e.amount; } });
 
-            let cHtml = "";
-            for(let k in cashierData) {
-                cHtml += `<tr><td><strong>${k}</strong></td><td>${cashierData[k].bills}</td><td style="color: #3b82f6; font-weight:bold;">Rs. ${cashierData[k].total}</td><td style="color: #10b981;">Rs. ${cashierData[k].cash}</td><td style="color: #ef4444;">Rs. ${cashierData[k].udhaar}</td></tr>`;
+            document.getElementById("repDateRange").innerText = `From: ${start} To: ${end}`;
+            document.getElementById("rTotalSales").innerText = gross;
+            document.getElementById("rCashSales").innerText = cashIn;
+            document.getElementById("rUdhaar").innerText = udhaarGiven;
+            document.getElementById("rExpenses").innerText = expOut;
+            
+            // Formula: Net Profit = (Total Cash + Udhaar) - Expenses. You can adjust profit calculations as needed.
+            let estimatedProfit = gross - expOut; 
+            document.getElementById("rNetProfit").innerText = estimatedProfit;
+
+            let shiftHtml = "";
+            for(let name in shifts) {
+                if(shifts[name].b > 0) {
+                    shiftHtml += `<tr><td>${name}</td><td>${shifts[name].b}</td><td>${shifts[name].s}</td><td>${shifts[name].c}</td><td>${shifts[name].u}</td></tr>`;
+                }
             }
-            document.getElementById("rCashierBody").innerHTML = cHtml || `<tr><td colspan="5" style="text-align:center;">Koi sale nahi hui.</td></tr>`;
+            document.getElementById("rCashierBody").innerHTML = shiftHtml || "<tr><td colspan='5'>No sales recorded.</td></tr>";
+            document.getElementById("reportPrintArea").style.display = "block";
         }
 
         function printReport() {
+            if(document.getElementById("reportPrintArea").style.display === "none") { return alert("Pehle Generate Report karein!"); }
             let area = document.getElementById("reportPrintArea");
-            area.classList.add("print-active-target"); window.print(); area.classList.remove("print-active-target");
+            area.classList.add("print-active-target");
+            window.print();
+            area.classList.remove("print-active-target");
         }
+
     </script>
 </body>
 </html>
