@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Al Khadim Mart - Counter POS System</title>
+    <title>Al Khadim Mart - Professional POS & Ledger</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0f172a; margin: 0; padding: 20px; color: #f8fafc; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #1e293b; padding-bottom: 10px; }
@@ -21,7 +21,6 @@
         th { background: #0f172a; color: #94a3b8; }
         .low-stock { background-color: #7f1d1d !important; color: white !important; font-weight: bold; }
         
-        /* Dashboard Stats Cards */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
         .stat-card { background: #0f172a; padding: 15px; border-radius: 8px; border-left: 4px solid #38bdf8; }
         .stat-card h4 { margin: 0 0 10px 0; color: #94a3b8; font-size: 14px; }
@@ -30,12 +29,14 @@
         #loginOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; display: flex; justify-content: center; align-items: center; z-index: 1000; }
         .login-box { background: #1e293b; padding: 40px; border-radius: 12px; text-align: center; width: 300px; }
         
-        /* Print Styles */
+        /* Modal Style for Shift Closing */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.9); justify-content: center; align-items: center; z-index: 2000; }
+        .modal-content { background: #1e293b; padding: 25px; border-radius: 12px; width: 90%; max-width: 500px; border: 2px solid #38bdf8; }
+
         @media print {
             body * { visibility: hidden; }
-            .print-active-target, .print-active-target * { visibility: visible; }
-            .print-active-target { position: absolute; left: 0; top: 0; width: 100%; background: white !important; color: black !important; }
-            .no-print { display: none !important; }
+            .print-active-target, .print-active-target * { visibility: visible !important; }
+            .print-active-target { position: absolute; left: 0; top: 0; width: 100%; background: white !important; color: black !important; display: block !important; }
         }
     </style>
 </head>
@@ -46,8 +47,9 @@
             <h2 style="color:#38bdf8; margin-top:0;">Al Khadim Mart</h2>
             <select id="loginUserSelect" style="width: 100%; margin-bottom: 15px;">
                 <option value="Admin">Admin</option>
-                <option value="Ali">Salesman Ali</option>
-                <option value="Bilal">Salesman Bilal</option>
+                <option value="Wasi">Wasi</option>
+                <option value="Ubaid">Ubaid</option>
+                <option value="Yassin">Yassin</option>
             </select>
             <input type="password" id="loginPasswordInput" placeholder="Password" style="width: 100%; margin-bottom: 20px;">
             <button class="btn-blue" style="width: 100%; padding: 12px;" onclick="attemptLogin()">Login</button>
@@ -58,12 +60,33 @@
         <h1>Al Khadim Brothers Wholesale Mart</h1>
         <div>
             <span style="color:#94a3b8; margin-right: 15px;">Naam: <strong id="currentActiveUserText" style="color:#10b981;">---</strong></span>
-            <button class="btn-red" onclick="logout()">Logout</button>
+            <button id="logoutActionButton" class="btn-red" onclick="handleLogoutAction()">Logout</button>
+        </div>
+    </div>
+
+    <div id="shiftModal" class="modal">
+        <div class="modal-content">
+            <div id="shiftPrintArea" style="padding: 10px;">
+                <h2 style="text-align:center; color:#38bdf8; margin-top:0;">🏁 Shift Closing Report</h2>
+                <p><strong>Salesman Name:</strong> <span id="scName" style="color:#10b981;"></span></p>
+                <p><strong>Tareekh & Waqt:</strong> <span id="scTime"></span></p>
+                <hr style="border-color:#475569;">
+                <h3 style="margin: 10px 0;">💰 Shift Summary</h3>
+                <p>Total Bills Made: <strong id="scBills">0</strong></p>
+                <p>Total Sales Value: <strong id="scTotalSale" style="color:#3b82f6;">Rs. 0</strong></p>
+                <p>Cash Received (In Counter): <strong id="scCash" style="color:#10b981;">Rs. 0</strong></p>
+                <p>Udhaar Given (Credit): <strong id="scUdhaar" style="color:#ef4444;">Rs. 0</strong></p>
+            </div>
+            <hr style="border-color:#475569;">
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button class="btn-blue" style="flex:1;" onclick="printShiftReport()">🖨️ Print Report</button>
+                <button class="btn-red" style="flex:1;" onclick="confirmShiftCloseLogout()">Close Shift & Exit</button>
+            </div>
         </div>
     </div>
 
     <div id="counterView" class="box" style="display:none; border-top: 4px solid #10b981;">
-        <h3 style="color:#10b981; margin-top:0;">🛒 Counter & Billing</h3>
+        <h3 style="color:#10b981; margin-top:0;">🛒 Counter & Billing Panel</h3>
         
         <div style="background: #0f172a; padding: 15px; border-radius: 8px; margin-bottom: 15px; display:flex; gap:10px; flex-wrap:wrap;">
             <input type="number" id="custPhone" placeholder="Grahak ka Mobile No." style="flex-grow: 1;" onkeyup="fetchCustomerData()">
@@ -121,7 +144,7 @@
                     <input type="number" id="newProdCost" placeholder="Khareed (Cost)" style="width: 120px;">
                     <input type="number" id="newProdSale" placeholder="Sale Price" style="width: 120px;">
                     <input type="number" id="newProdQty" placeholder="Total Qty" style="width: 100px;">
-                    <input type="number" id="newProdAlert" placeholder="Low Alert (e.g. 5)" style="width: 120px;" title="Kam hone par alert">
+                    <input type="number" id="newProdAlert" placeholder="Low Alert (e.g. 5)" style="width: 120px;">
                     <button class="btn-green" onclick="addProduct()">Save Product</button>
                 </div>
             </div>
@@ -187,7 +210,7 @@
         <div id="tab-expense" class="admin-tab" style="display:none;">
             <div style="background: #0f172a; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
                 <h3 style="margin-top:0; color:#ef4444;">💸 Naya Kharcha Note Karein</h3>
-                <input type="text" id="expDesc" placeholder="Kharcha kis cheez ka hai? (e.g., Bijli Bill, Rent)" style="width: 40%;">
+                <input type="text" id="expDesc" placeholder="Kharcha kis cheez ka hai? (e.g., Rent, Bill)" style="width: 40%;">
                 <input type="number" id="expAmt" placeholder="Amount (Rs.)">
                 <button class="btn-red" onclick="addExpense()">Save Expense</button>
             </div>
@@ -198,28 +221,53 @@
         </div>
 
         <div id="tab-report" class="admin-tab" style="display:none;">
-            <h3 style="color:#38bdf8;">📊 Smart Business Report</h3>
-            <div style="display:flex; gap:15px; margin-bottom:15px;">
-                <input type="date" id="repStart">
-                <input type="date" id="repEnd">
+            <h3 style="color:#38bdf8;">📊 Smart Business Report Center</h3>
+            
+            <div style="background:#0f172a; padding:15px; border-radius:8px; display:flex; gap:15px; align-items:center; flex-wrap:wrap; margin-bottom:15px;">
+                <div>
+                    <label>Custom Date Range: </label>
+                    <input type="date" id="repStart"> to <input type="date" id="repEnd">
+                </div>
+                <div style="border-left: 2px solid #334155; padding-left:15px;">
+                    <label>Month Selection: </label>
+                    <select id="repMonthSelect" onchange="setQuickDates()">
+                        <option value="">-- Select Month --</option>
+                        <option value="01">January</option><option value="02">February</option>
+                        <option value="03">March</option><option value="04">April</option>
+                        <option value="05">May</option><option value="06">June</option>
+                        <option value="07">July</option><option value="08">August</option>
+                        <option value="09">September</option><option value="10">October</option>
+                        <option value="11">November</option><option value="12">December</option>
+                    </select>
+                </div>
+                <div style="border-left: 2px solid #334155; padding-left:15px;">
+                    <label>Year Selection: </label>
+                    <select id="repYearSelect" onchange="setQuickDates()">
+                        <option value="">-- Select Year --</option>
+                        <option value="2025">2025</option>
+                        <option value="2026">2026</option>
+                        <option value="2027">2027</option>
+                        <option value="2028">2028</option>
+                    </select>
+                </div>
                 <button class="btn-green" onclick="generateReport()">Generate Report</button>
-                <button class="btn-blue" onclick="printReport()">🖨️ Print</button>
+                <button class="btn-blue" onclick="printReport()">🖨️ Print Report</button>
             </div>
             
             <div id="reportPrintArea" style="background:white; color:black; padding:20px; border-radius:8px; display:none;">
-                <h2 style="text-align:center; margin:0;">AL KHADIM MART - REPORT</h2>
-                <p style="text-align:center;" id="repDateRange"></p><hr>
+                <h2 style="text-align:center; margin:0;">AL KHADIM MART - PERFORMANCE REPORT</h2>
+                <p style="text-align:center; margin:5px 0 15px 0; font-weight:bold;" id="repDateRange"></p><hr>
                 
-                <h3 style="margin-bottom:5px;">💰 Financial Overview</h3>
+                <h3 style="margin-bottom:5px;">💰 Financial Breakdown</h3>
                 <p><strong>Total Gross Sales:</strong> Rs. <span id="rTotalSales">0</span></p>
-                <p><strong>Cash Received (Cash Sale):</strong> Rs. <span id="rCashSales">0</span></p>
-                <p><strong>Udhaar Given (Credit):</strong> Rs. <span id="rUdhaar">0</span></p>
-                <p style="color:red;"><strong>Total Expenses:</strong> Rs. <span id="rExpenses">0</span></p>
-                <p style="color:green;"><strong>Net Business Profit:</strong> Rs. <span id="rNetProfit">0</span></p>
+                <p><strong>Cash Received (Naqd Asset):</strong> Rs. <span id="rCashSales">0</span></p>
+                <p><strong>Udhaar Given (Market Out):</strong> Rs. <span id="rUdhaar">0</span></p>
+                <p style="color:red;"><strong>Total Expenses (Kharche):</strong> Rs. <span id="rExpenses">0</span></p>
+                <p style="color:green; font-size:16px;"><strong>Net Business Profit (Kharche nikal kar):</strong> Rs. <span id="rNetProfit">0</span></p>
                 
                 <hr>
-                <h3 style="margin-bottom:5px;">👤 Salesman Performance Tafseel</h3>
-                <table style="color:black; font-size:14px; border:1px solid #ccc; width: 100%;">
+                <h3 style="margin-bottom:5px;">👤 Salesman Shift & Sales Summary</h3>
+                <table style="color:black; font-size:14px; border:1px solid #ccc; width:100%;">
                     <thead>
                         <tr style="background:#eee;">
                             <th>Salesman Naam</th>
@@ -263,29 +311,42 @@
     </div>
 
     <script>
+        const imageBaselineStock = [
+            { id: "P1", name: "Hilal Cake", cost: 181.25, price: 200, qty: 24, bought: 24, sold: 0, lowAlert: 5 },
+            { id: "P2", name: "Crust Wafer", cost: 188.88, price: 200, qty: 18, bought: 18, sold: 0, lowAlert: 5 },
+            { id: "P3", name: "Treat Candy", cost: 94.58, price: 110, qty: 24, bought: 24, sold: 0, lowAlert: 5 },
+            { id: "P4", name: "Kulfa Jar", cost: 188.88, price: 200, qty: 18, bought: 18, sold: 0, lowAlert: 5 },
+            { id: "P5", name: "Rite", cost: 261.11, price: 270, qty: 18, bought: 18, sold: 0, lowAlert: 5 },
+            { id: "P6", name: "Bazooka", cost: 154.16, price: 200, qty: 12, bought: 12, sold: 0, lowAlert: 5 },
+            { id: "P7", name: "Tuk Tok", cost: 120, price: 130, qty: 18, bought: 18, sold: 0, lowAlert: 5 },
+            { id: "P8", name: "OMax wafer", cost: 194.16, price: 205, qty: 24, bought: 24, sold: 0, lowAlert: 5 },
+            { id: "P9", name: "Matar Masala", cost: 113.88, price: 130, qty: 18, bought: 18, sold: 0, lowAlert: 5 },
+            { id: "P10", name: "Daty", cost: 183.33, price: 200, qty: 18, bought: 18, sold: 0, lowAlert: 5 },
+            { id: "P11", name: "Minto gum", cost: 187.5, price: 200, qty: 12, bought: 12, sold: 0, lowAlert: 5 },
+            { id: "P12", name: "Twisto", cost: 237.5, price: 250, qty: 12, bought: 12, sold: 0, lowAlert: 5 },
+            { id: "P13", name: "Pip&Nut", cost: 192.77, price: 200, qty: 18, bought: 18, sold: 0, lowAlert: 5 }
+        ];
+
         let products = JSON.parse(localStorage.getItem("mart_products")) || JSON.parse(localStorage.getItem("martProducts")) || JSON.parse(localStorage.getItem("products")) || [];
+        
+        if (products.length === 0) {
+            products = imageBaselineStock;
+        }
+
         let customers = JSON.parse(localStorage.getItem("mart_customers")) || JSON.parse(localStorage.getItem("customers")) || {};
         let expenses = JSON.parse(localStorage.getItem("mart_expenses")) || JSON.parse(localStorage.getItem("expenses")) || [];
-        let salesHistory = JSON.parse(localStorage.getItem("mart_sales")) || JSON.parse(localStorage.getItem("salesHistory")) || JSON.parse(localStorage.getItem("martSalesHistory")) || [];
+        let salesHistory = JSON.parse(localStorage.getItem("mart_sales")) || JSON.parse(localStorage.getItem("salesHistory")) || [];
         
-        const systemUsers = { "Admin": "1234", "Ali": "1111", "Bilal": "2222" };
+        // Configured users
+        const systemUsers = { "Admin": "1234", "Wasi": "1111", "Ubaid": "2222", "Yassin": "3333" };
         let currentUser = "";
         let cart = [];
 
         function saveDB() {
             localStorage.setItem("mart_products", JSON.stringify(products));
-            localStorage.setItem("martProducts", JSON.stringify(products));
-            localStorage.setItem("products", JSON.stringify(products));
-
             localStorage.setItem("mart_sales", JSON.stringify(salesHistory));
-            localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
-            localStorage.setItem("martSalesHistory", JSON.stringify(salesHistory));
-
             localStorage.setItem("mart_customers", JSON.stringify(customers));
-            localStorage.setItem("customers", JSON.stringify(customers));
-
             localStorage.setItem("mart_expenses", JSON.stringify(expenses));
-            localStorage.setItem("expenses", JSON.stringify(expenses));
         }
 
         function attemptLogin() {
@@ -297,20 +358,83 @@
                 document.getElementById("loginOverlay").style.display = "none";
                 document.getElementById("loginPasswordInput").value = "";
                 
+                let logoutBtn = document.getElementById("logoutActionButton");
                 if(u === "Admin") {
+                    logoutBtn.innerText = "Logout Admin";
+                    logoutBtn.className = "btn-red";
                     document.getElementById("adminView").style.display = "block";
                     document.getElementById("counterView").style.display = "none";
                     updateAdminDashboard();
                 } else {
+                    logoutBtn.innerText = "🔒 Close Shift & Logout";
+                    logoutBtn.className = "btn-yellow";
                     document.getElementById("adminView").style.display = "none";
                     document.getElementById("counterView").style.display = "block";
                 }
             } else { alert("Galt Password!"); }
         }
 
-        function logout() { location.reload(); }
+        function handleLogoutAction() {
+            if(currentUser === "Admin") {
+                location.reload();
+            } else {
+                openShiftClosingReport();
+            }
+        }
 
-        // --- Counter Logic ---
+        // --- CASHIER SHIFT CLOSING LOGIC ---
+        function openShiftClosingReport() {
+            let today = new Date().toISOString().split('T')[0];
+            let shiftBills = 0, shiftTotal = 0, shiftCash = 0, shiftUdhaar = 0;
+
+            salesHistory.forEach(s => {
+                if(s.cashier === currentUser && s.date === today) {
+                    if(s.total > 0) shiftBills++;
+                    shiftTotal += s.total;
+                    shiftCash += s.cashPaid;
+                    let uDiff = s.total - s.cashPaid;
+                    if(uDiff > 0) shiftUdhaar += uDiff;
+                }
+            });
+
+            document.getElementById("scName").innerText = currentUser;
+            document.getElementById("scTime").innerText = new Date().toLocaleString();
+            document.getElementById("scBills").innerText = shiftBills;
+            document.getElementById("scTotalSale").innerText = "Rs. " + shiftTotal;
+            document.getElementById("scCash").innerText = "Rs. " + shiftCash;
+            document.getElementById("scUdhaar").innerText = "Rs. " + shiftUdhaar;
+
+            document.getElementById("shiftModal").style.display = "flex";
+        }
+
+        function printShiftReport() {
+            let area = document.getElementById("shiftPrintArea");
+            area.classList.add("print-active-target");
+            window.print();
+            area.classList.remove("print-active-target");
+        }
+
+        function confirmShiftCloseLogout() {
+            document.getElementById("shiftModal").style.display = "none";
+            location.reload();
+        }
+
+        // --- Monthly & Yearly Sync ---
+        function setQuickDates() {
+            let month = document.getElementById("repMonthSelect").value;
+            let year = document.getElementById("repYearSelect").value || new Date().getFullYear();
+            
+            if(month) {
+                document.getElementById("repStart").value = `${year}-${month}-01`;
+                let lastDay = new Date(year, parseInt(month), 0).getDate();
+                document.getElementById("repEnd").value = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
+            } else if(year) {
+                document.getElementById("repStart").value = `${year}-01-01`;
+                document.getElementById("repEnd").value = `${year}-12-31`;
+            }
+        }
+
+        // --- Counter Operations ---
         function manualSearch() {
             let val = document.getElementById("barcodeInput").value.toLowerCase().trim();
             if(val === "") return;
@@ -398,15 +522,14 @@
                 return alert("Udhaar ke liye Customer ka Mobile Number likhna zaroori hai!");
             }
 
-            // Deduct Stock and update "Total Sold"
+            // Deduct Stock and update Sold analytics tracks
             cart.forEach(c => {
                 let p = products.find(prod => prod.id === c.id);
                 if(p) {
                     if(p.bought === undefined) p.bought = parseInt(p.qty || 0);
                     if(p.sold === undefined) p.sold = 0;
-                    
-                    p.qty -= c.qty; // baqi stock kam kiya
-                    p.sold += c.qty; // becha hua stock barha diya
+                    p.qty -= c.qty;
+                    p.sold += c.qty;
                 }
             });
 
@@ -446,7 +569,7 @@
             if(currentUser === "Admin") updateAdminDashboard();
         }
 
-        // --- Admin Control ---
+        // --- Admin Dashboard Engine ---
         function switchAdminTab(tab) {
             document.querySelectorAll('.admin-tab').forEach(el => el.style.display = 'none');
             document.getElementById('tab-' + tab).style.display = 'block';
@@ -464,10 +587,9 @@
             
             let sHtml = "";
             products.forEach((p, i) => {
-                // Safety check for older records
                 if(p.bought === undefined) p.bought = parseInt(p.qty || 0);
                 if(p.sold === undefined) p.sold = 0;
-                
+
                 tStockQty += parseInt(p.qty || 0);
                 let rowClass = (p.qty <= p.lowAlert) ? 'low-stock' : '';
                 sHtml += `<tr class="${rowClass}">
@@ -495,19 +617,20 @@
             let name = document.getElementById("newProdName").value;
             let cost = document.getElementById("newProdCost").value;
             let price = document.getElementById("newProdSale").value;
-            let qty = parseInt(document.getElementById("newProdQty").value) || 0;
+            let qty = document.getElementById("newProdQty").value;
             let alertLevel = document.getElementById("newProdAlert").value || 5;
 
             if(!name || !price) return alert("Name aur Sale Price lazmi hai.");
             
+            let qtyVal = parseInt(qty||0);
             products.push({ 
                 id: "P"+Date.now(), 
                 name, 
                 cost: parseFloat(cost||price), 
                 price: parseFloat(price), 
-                qty: qty, 
-                bought: qty, 
-                sold: 0, 
+                qty: qtyVal, 
+                bought: qtyVal,
+                sold: 0,
                 lowAlert: parseInt(alertLevel) 
             });
             saveDB();
@@ -518,7 +641,6 @@
             document.getElementById("newProdQty").value = "";
         }
 
-        // --- OPEN STOCK EDITOR FORM ---
         function openEditSection(i) {
             let p = products[i];
             if(p.bought === undefined) p.bought = parseInt(p.qty || 0);
@@ -536,7 +658,6 @@
             window.scrollTo(0, 200);
         }
 
-        // --- SAVE PRODUCT EDITS ---
         function saveProductEdit() {
             let i = document.getElementById("editProdIndex").value;
             let name = document.getElementById("editProdName").value.trim();
@@ -553,7 +674,7 @@
             products[i].price = price;
             products[i].bought = bought;
             products[i].sold = sold;
-            products[i].qty = (bought - sold); // Auto-calculate Remaining Stock
+            products[i].qty = (bought - sold); 
             products[i].lowAlert = lowAlert;
 
             saveDB();
@@ -569,12 +690,9 @@
         function addMoreStock(i) {
             let q = prompt("Kitna naya stock aya hai?");
             if(q && !isNaN(q)) { 
-                let amt = parseInt(q);
                 if(products[i].bought === undefined) products[i].bought = parseInt(products[i].qty || 0);
-                if(products[i].sold === undefined) products[i].sold = 0;
-
-                products[i].qty += amt; 
-                products[i].bought += amt; // Khreeda barh gaya
+                products[i].qty += parseInt(q); 
+                products[i].bought += parseInt(q); 
                 saveDB(); 
                 updateAdminDashboard(); 
             }
@@ -616,11 +734,10 @@
             document.getElementById("expenseTableBody").innerHTML = html;
         }
 
-        // --- NEW DETAILED REPORT LOGIC ---
         function generateReport() {
             let sDate = document.getElementById("repStart").value;
             let eDate = document.getElementById("repEnd").value;
-            if(!sDate || !eDate) return alert("Date select karein!");
+            if(!sDate || !eDate) return alert("Meharbani karke tareekh select karein!");
 
             let rSale = 0, rCash = 0, rProfit = 0, rExp = 0;
             let cashierData = {};
@@ -639,16 +756,14 @@
                     cashierData[c].cash += s.cashPaid; 
                     
                     let billUdhaar = s.total - s.cashPaid;
-                    if(billUdhaar > 0) {
-                        cashierData[c].udhaar += billUdhaar; 
-                    }
+                    if(billUdhaar > 0) cashierData[c].udhaar += billUdhaar;
                 }
             });
 
             expenses.forEach(e => { if(e.date >= sDate && e.date <= eDate) rExp += e.amount; });
 
             document.getElementById("reportPrintArea").style.display = "block";
-            document.getElementById("repDateRange").innerText = `From: ${sDate} To: ${eDate}`;
+            document.getElementById("repDateRange").innerText = `Report Duration: ${sDate} To ${eDate}`;
             document.getElementById("rTotalSales").innerText = rSale;
             document.getElementById("rCashSales").innerText = rCash;
             document.getElementById("rUdhaar").innerText = (rSale - rCash > 0) ? (rSale - rCash) : 0;
@@ -666,7 +781,7 @@
                 </tr>`; 
             }
             if(Object.keys(cashierData).length === 0) {
-                cHtml = `<tr><td colspan="5" style="text-align:center;">Is date range me koi record nahi mila.</td></tr>`;
+                cHtml = `<tr><td colspan="5" style="text-align:center;">Chuni hui dates me koi sale nahi hui.</td></tr>`;
             }
             document.getElementById("rCashierBody").innerHTML = cHtml;
         }
