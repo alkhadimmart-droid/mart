@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Al Khadim Mart - Full POS System</title>
+    <title>Al Khadim Mart - Counter POS System</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0f172a; margin: 0; padding: 20px; color: #f8fafc; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #1e293b; padding-bottom: 10px; }
@@ -41,7 +41,6 @@
 </head>
 <body>
 
-    <!-- Login Screen -->
     <div id="loginOverlay">
         <div class="login-box">
             <h2 style="color:#38bdf8; margin-top:0;">Al Khadim Mart</h2>
@@ -55,7 +54,6 @@
         </div>
     </div>
 
-    <!-- Main Header -->
     <div class="header">
         <h1>Al Khadim Brothers Wholesale Mart</h1>
         <div>
@@ -64,11 +62,9 @@
         </div>
     </div>
 
-    <!-- ================= COUNTER VIEW (Salesman) ================= -->
     <div id="counterView" class="box" style="display:none; border-top: 4px solid #10b981;">
         <h3 style="color:#10b981; margin-top:0;">🛒 Counter & Billing</h3>
         
-        <!-- Khata / Customer Info -->
         <div style="background: #0f172a; padding: 15px; border-radius: 8px; margin-bottom: 15px; display:flex; gap:10px; flex-wrap:wrap;">
             <input type="number" id="custPhone" placeholder="Grahak ka Mobile No." style="flex-grow: 1;" onkeyup="fetchCustomerData()">
             <input type="text" id="custName" placeholder="Grahak ka Naam" style="flex-grow: 1;">
@@ -87,7 +83,6 @@
             <tbody id="cartTableBody"></tbody>
         </table>
         
-        <!-- Billing Options -->
         <div style="text-align: right; margin-top: 20px; background: #0f172a; padding: 15px; border-radius: 8px;">
             <h3 style="margin: 0 0 10px 0; color: #38bdf8;">Bill Total: Rs. <span id="netTotalText">0</span></h3>
             <div>
@@ -100,11 +95,9 @@
         </div>
     </div>
 
-    <!-- ================= ADMIN VIEW ================= -->
     <div id="adminView" class="box" style="display:none; border-top: 4px solid #ef4444;">
         <h2 style="color:#ef4444; margin-top:0;">🛡️ Admin Dashboard</h2>
         
-        <!-- Dashboard Live Stats -->
         <div class="stats-grid">
             <div class="stat-card" style="border-color:#10b981;"><h4>Cash Sale (Total)</h4><h2 id="dashTotalSale">Rs. 0</h2></div>
             <div class="stat-card" style="border-color:#f59e0b;"><h4>Dukan ka Udhaar (Baqi)</h4><h2 id="dashTotalUdhaar">Rs. 0</h2></div>
@@ -113,7 +106,6 @@
             <div class="stat-card" style="border-color:#8b5cf6; grid-column: span 2;"><h4>Andazan Net Profit (Sale - Kharcha)</h4><h2 id="dashNetProfit">Rs. 0</h2></div>
         </div>
 
-        <!-- Admin Navigation -->
         <div style="margin-bottom: 20px; display:flex; gap:10px;">
             <button class="btn-blue" onclick="switchAdminTab('stock')">📦 Manage Stock</button>
             <button class="btn-yellow" onclick="switchAdminTab('khata')">📒 Grahak Khata</button>
@@ -121,7 +113,6 @@
             <button class="btn-green" onclick="switchAdminTab('report')">📊 Detailed Reports</button>
         </div>
 
-        <!-- 1. Stock Tab -->
         <div id="tab-stock" class="admin-tab">
             <div style="background: #0f172a; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
                 <h3 style="margin-top:0; color:#10b981;">➕ Add Product & Stock</h3>
@@ -134,13 +125,57 @@
                     <button class="btn-green" onclick="addProduct()">Save Product</button>
                 </div>
             </div>
+
+            <div id="editProdSection" style="display:none; background: #0f172a; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #f59e0b;">
+                <h3 style="margin-top:0; color:#f59e0b;">✏️ Edit Product Details</h3>
+                <input type="hidden" id="editProdIndex">
+                <div style="display:flex; gap:10px; flex-wrap: wrap;">
+                    <div style="flex-grow:1; min-width:200px;">
+                        <label style="font-size:12px; color:#94a3b8;">Item Name:</label><br>
+                        <input type="text" id="editProdName" placeholder="Item Name" style="width:100%; box-sizing:border-box;">
+                    </div>
+                    <div>
+                        <label style="font-size:12px; color:#94a3b8;">Khareed (Cost):</label><br>
+                        <input type="number" id="editProdCost" style="width: 110px;">
+                    </div>
+                    <div>
+                        <label style="font-size:12px; color:#94a3b8;">Sale Price:</label><br>
+                        <input type="number" id="editProdSale" style="width: 110px;">
+                    </div>
+                    <div>
+                        <label style="font-size:12px; color:#94a3b8;">Kitna Khrida (Bought):</label><br>
+                        <input type="number" id="editProdBought" style="width: 140px;">
+                    </div>
+                    <div>
+                        <label style="font-size:12px; color:#94a3b8;">Kitna Becha (Sold):</label><br>
+                        <input type="number" id="editProdSold" style="width: 130px;">
+                    </div>
+                    <div>
+                        <label style="font-size:12px; color:#94a3b8;">Low Alert:</label><br>
+                        <input type="number" id="editProdAlert" style="width: 90px;">
+                    </div>
+                </div>
+                <div style="margin-top: 10px;">
+                    <button class="btn-green" onclick="saveProductEdit()">💾 Save Changes</button>
+                    <button class="btn-red" onclick="cancelProductEdit()">Cancel</button>
+                </div>
+            </div>
+
             <table>
-                <thead><tr><th>Name</th><th>Cost / Sale</th><th>Available Stock</th><th>Action</th></tr></thead>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Cost / Sale</th>
+                        <th style="color:#38bdf8;">Kitna Khrida (Bought)</th>
+                        <th style="color:#f59e0b;">Kitna Becha (Sold)</th>
+                        <th style="color:#10b981;">Kitna Baqi Hai</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
                 <tbody id="stockTableBody"></tbody>
             </table>
         </div>
 
-        <!-- 2. Khata Tab -->
         <div id="tab-khata" class="admin-tab" style="display:none;">
             <h3 style="color:#f59e0b;">📒 Grahak Khata (Udhaar Details)</h3>
             <table>
@@ -149,7 +184,6 @@
             </table>
         </div>
 
-        <!-- 3. Expenses Tab -->
         <div id="tab-expense" class="admin-tab" style="display:none;">
             <div style="background: #0f172a; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
                 <h3 style="margin-top:0; color:#ef4444;">💸 Naya Kharcha Note Karein</h3>
@@ -163,7 +197,6 @@
             </table>
         </div>
 
-        <!-- 4. Reports Tab -->
         <div id="tab-report" class="admin-tab" style="display:none;">
             <h3 style="color:#38bdf8;">📊 Smart Business Report</h3>
             <div style="display:flex; gap:15px; margin-bottom:15px;">
@@ -202,7 +235,6 @@
         </div>
     </div>
 
-    <!-- ================= BILL PRINT FORMAT ================= -->
     <div id="billPrintArea" style="display:none; background:white; color:black; padding:20px; width:80mm; font-family: monospace;">
         <h2 style="text-align:center; margin:0; font-size:18px;">Al Khadim Mart</h2>
         <p style="text-align:center; font-size:12px; margin:0;">Invoice / Bill</p>
@@ -230,9 +262,7 @@
         <p style="text-align:center; font-size:11px; margin-top:15px;">Naam: <span id="billCashierName"></span><br>Thank you for shopping!</p>
     </div>
 
-    <!-- ================= JAVASCRIPT ================= -->
     <script>
-        // SMART FIX: Purana koi bhi data dhoond kar wapas laane ke liye multiple keys check ki hain
         let products = JSON.parse(localStorage.getItem("mart_products")) || JSON.parse(localStorage.getItem("martProducts")) || JSON.parse(localStorage.getItem("products")) || [];
         let customers = JSON.parse(localStorage.getItem("mart_customers")) || JSON.parse(localStorage.getItem("customers")) || {};
         let expenses = JSON.parse(localStorage.getItem("mart_expenses")) || JSON.parse(localStorage.getItem("expenses")) || [];
@@ -243,7 +273,6 @@
         let cart = [];
 
         function saveDB() {
-            // Tamam keys me data save kar rhe hain taake data safe rahe
             localStorage.setItem("mart_products", JSON.stringify(products));
             localStorage.setItem("martProducts", JSON.stringify(products));
             localStorage.setItem("products", JSON.stringify(products));
@@ -369,9 +398,16 @@
                 return alert("Udhaar ke liye Customer ka Mobile Number likhna zaroori hai!");
             }
 
+            // Deduct Stock and update "Total Sold"
             cart.forEach(c => {
                 let p = products.find(prod => prod.id === c.id);
-                if(p) p.qty -= c.qty;
+                if(p) {
+                    if(p.bought === undefined) p.bought = parseInt(p.qty || 0);
+                    if(p.sold === undefined) p.sold = 0;
+                    
+                    p.qty -= c.qty; // baqi stock kam kiya
+                    p.sold += c.qty; // becha hua stock barha diya
+                }
             });
 
             salesHistory.push({ date, cashier: currentUser, total: netTotal, profit, cashPaid: cash, phone });
@@ -428,13 +464,22 @@
             
             let sHtml = "";
             products.forEach((p, i) => {
+                // Safety check for older records
+                if(p.bought === undefined) p.bought = parseInt(p.qty || 0);
+                if(p.sold === undefined) p.sold = 0;
+                
                 tStockQty += parseInt(p.qty || 0);
                 let rowClass = (p.qty <= p.lowAlert) ? 'low-stock' : '';
                 sHtml += `<tr class="${rowClass}">
                     <td>${p.name} ${p.qty <= p.lowAlert ? "⚠️(Low)" : ""}</td>
                     <td>Rs. ${p.cost} / Rs. ${p.price}</td>
-                    <td>${p.qty}</td>
-                    <td><button class="btn-yellow" onclick="addMoreStock(${i})">Add Stock</button> <button class="btn-red" onclick="delProduct(${i})">Del</button></td>
+                    <td style="font-weight:bold; color:#38bdf8;">${p.bought}</td>
+                    <td style="font-weight:bold; color:#f59e0b;">${p.sold}</td>
+                    <td style="font-weight:bold; color:#10b981;">${p.qty}</td>
+                    <td>
+                        <button class="btn-yellow" onclick="addMoreStock(${i})">Add Stock</button> 
+                        <button class="btn-blue" onclick="openEditSection(${i})">📝 Edit</button>
+                    </td>
                 </tr>`;
             });
 
@@ -450,11 +495,21 @@
             let name = document.getElementById("newProdName").value;
             let cost = document.getElementById("newProdCost").value;
             let price = document.getElementById("newProdSale").value;
-            let qty = document.getElementById("newProdQty").value;
+            let qty = parseInt(document.getElementById("newProdQty").value) || 0;
             let alertLevel = document.getElementById("newProdAlert").value || 5;
 
             if(!name || !price) return alert("Name aur Sale Price lazmi hai.");
-            products.push({ id: "P"+Date.now(), name, cost: parseFloat(cost||price), price: parseFloat(price), qty: parseInt(qty||0), lowAlert: parseInt(alertLevel) });
+            
+            products.push({ 
+                id: "P"+Date.now(), 
+                name, 
+                cost: parseFloat(cost||price), 
+                price: parseFloat(price), 
+                qty: qty, 
+                bought: qty, 
+                sold: 0, 
+                lowAlert: parseInt(alertLevel) 
+            });
             saveDB();
             updateAdminDashboard();
             document.getElementById("newProdName").value = "";
@@ -463,11 +518,66 @@
             document.getElementById("newProdQty").value = "";
         }
 
-        function delProduct(i) { if(confirm("Delete item?")) { products.splice(i,1); saveDB(); updateAdminDashboard(); } }
+        // --- OPEN STOCK EDITOR FORM ---
+        function openEditSection(i) {
+            let p = products[i];
+            if(p.bought === undefined) p.bought = parseInt(p.qty || 0);
+            if(p.sold === undefined) p.sold = 0;
+
+            document.getElementById("editProdIndex").value = i;
+            document.getElementById("editProdName").value = p.name;
+            document.getElementById("editProdCost").value = p.cost;
+            document.getElementById("editProdSale").value = p.price;
+            document.getElementById("editProdBought").value = p.bought;
+            document.getElementById("editProdSold").value = p.sold;
+            document.getElementById("editProdAlert").value = p.lowAlert || 5;
+            
+            document.getElementById("editProdSection").style.display = "block";
+            window.scrollTo(0, 200);
+        }
+
+        // --- SAVE PRODUCT EDITS ---
+        function saveProductEdit() {
+            let i = document.getElementById("editProdIndex").value;
+            let name = document.getElementById("editProdName").value.trim();
+            let cost = parseFloat(document.getElementById("editProdCost").value) || 0;
+            let price = parseFloat(document.getElementById("editProdSale").value) || 0;
+            let bought = parseInt(document.getElementById("editProdBought").value) || 0;
+            let sold = parseInt(document.getElementById("editProdSold").value) || 0;
+            let lowAlert = parseInt(document.getElementById("editProdAlert").value) || 5;
+
+            if(!name || !price) return alert("Name aur Sale Price lazmi hai.");
+
+            products[i].name = name;
+            products[i].cost = cost;
+            products[i].price = price;
+            products[i].bought = bought;
+            products[i].sold = sold;
+            products[i].qty = (bought - sold); // Auto-calculate Remaining Stock
+            products[i].lowAlert = lowAlert;
+
+            saveDB();
+            updateAdminDashboard();
+            document.getElementById("editProdSection").style.display = "none";
+            alert("Saman ka record successfully update ho gaya!");
+        }
+
+        function cancelProductEdit() {
+            document.getElementById("editProdSection").style.display = "none";
+        }
         
         function addMoreStock(i) {
             let q = prompt("Kitna naya stock aya hai?");
-            if(q && !isNaN(q)) { products[i].qty += parseInt(q); saveDB(); updateAdminDashboard(); }
+            if(q && !isNaN(q)) { 
+                let amt = parseInt(q);
+                if(products[i].bought === undefined) products[i].bought = parseInt(products[i].qty || 0);
+                if(products[i].sold === undefined) products[i].sold = 0;
+
+                products[i].qty += amt; 
+                products[i].bought += amt; // Khreeda barh gaya
+                saveDB(); 
+                updateAdminDashboard(); 
+            }
         }
 
         function updateKhataTable() {
@@ -525,12 +635,12 @@
                     if(!cashierData[c]) cashierData[c] = { bills: 0, total: 0, cash: 0, udhaar: 0 };
                     
                     if(s.total > 0) cashierData[c].bills++;
-                    cashierData[c].total += s.total; // Kul sale
-                    cashierData[c].cash += s.cashPaid; // Naqd mila
+                    cashierData[c].total += s.total; 
+                    cashierData[c].cash += s.cashPaid; 
                     
                     let billUdhaar = s.total - s.cashPaid;
                     if(billUdhaar > 0) {
-                        cashierData[c].udhaar += billUdhaar; // Kitna udhaar diya
+                        cashierData[c].udhaar += billUdhaar; 
                     }
                 }
             });
@@ -545,7 +655,6 @@
             document.getElementById("rExpenses").innerText = rExp;
             document.getElementById("rNetProfit").innerText = rProfit - rExp;
 
-            // Displaying Salesman details with complete breakdown (Bills, Sale, Cash, Credit)
             let cHtml = "";
             for(let k in cashierData) { 
                 cHtml += `<tr>
@@ -569,7 +678,6 @@
             area.classList.remove("print-active-target");
         }
 
-        // Auto load initial stats if admin
         window.onload = function() {
             if(currentUser === "Admin") updateAdminDashboard();
         }
