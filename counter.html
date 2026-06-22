@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Al Khadim Mart - Professional POS & Ledger</title>
+    <title>Al Khadim Mart - Full POS System</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0f172a; margin: 0; padding: 20px; color: #f8fafc; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0f172a; margin: 0; padding: 20px; color: #f8fafc; transition: background 0.3s ease; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #1e293b; padding-bottom: 10px; }
         .header h1 { margin: 0; color: #38bdf8; font-size: 24px; }
         .box { background: #1e293b; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
@@ -26,11 +26,18 @@
         .stat-card h4 { margin: 0 0 10px 0; color: #94a3b8; font-size: 14px; }
         .stat-card h2 { margin: 0; font-size: 22px; color: white; }
 
+        /* --- ADMIN ULTRA PREMIUM DARK THEME OVERRIDES --- */
+        .admin-mode-active { background: #07070a !important; } 
+        .admin-box { background: #111116 !important; border: 1px solid #ff3333 !important; box-shadow: 0 4px 25px rgba(255, 51, 51, 0.15); } 
+        .admin-card { background: #181822 !important; border-left: 4px solid #ff3333 !important; } 
+        .admin-input { background: #07070a !important; border: 1px solid #ff3333 !important; color: #ffffff !important; } 
+        .admin-th { background: #181822 !important; color: #ff6666 !important; border-bottom: 2px solid #ff3333 !important; }
+
         #loginOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; display: flex; justify-content: center; align-items: center; z-index: 1000; }
         .login-box { background: #1e293b; padding: 40px; border-radius: 12px; text-align: center; width: 300px; }
         
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.9); justify-content: center; align-items: center; z-index: 2000; }
-        .modal-content { background: #1e293b; padding: 25px; border-radius: 12px; width: 90%; max-width: 500px; border: 2px solid #38bdf8; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(7,7,10,0.95); justify-content: center; align-items: center; z-index: 2000; }
+        .modal-content { background: #1e293b; padding: 25px; border-radius: 12px; width: 90%; max-width: 500px; border: 2px solid #10b981; box-shadow: 0 0 20px rgba(16,185,129,0.3); }
 
         @media print {
             body * { visibility: hidden; }
@@ -56,7 +63,7 @@
     </div>
 
     <div class="header">
-        <h1>Al Khadim Brothers Wholesale Mart</h1>
+        <h1 id="mainHeaderTitle">Al Khadim Brothers Wholesale Mart</h1>
         <div>
             <span style="color:#94a3b8; margin-right: 15px;">Naam: <strong id="currentActiveUserText" style="color:#10b981;">---</strong></span>
             <button id="logoutActionButton" class="btn-red" onclick="handleLogoutAction()">Logout</button>
@@ -65,9 +72,9 @@
 
     <div id="shiftModal" class="modal">
         <div class="modal-content">
-            <div id="shiftPrintArea" style="padding: 10px;">
-                <h2 style="text-align:center; color:#38bdf8; margin-top:0;">🏁 Shift Closing Report</h2>
-                <p><strong>Salesman Name:</strong> <span id="scName" style="color:#10b981;"></span></p>
+            <div id="shiftPrintArea" style="padding: 10px; background: #1e293b; color: white; border-radius: 6px;">
+                <h2 style="text-align:center; color:#10b981; margin-top:0;">🏁 Shift Closing Report</h2>
+                <p><strong>Salesman Name:</strong> <span id="scName" style="color:#38bdf8;"></span></p>
                 <p><strong>Tareekh & Waqt:</strong> <span id="scTime"></span></p>
                 <hr style="border-color:#475569;">
                 <h3 style="margin: 10px 0;">💰 Shift Summary</h3>
@@ -77,9 +84,9 @@
                 <p>Udhaar Given (Credit): <strong id="scUdhaar" style="color:#ef4444;">Rs. 0</strong></p>
             </div>
             <hr style="border-color:#475569;">
-            <div style="display:flex; gap:10px; margin-top:15px;">
-                <button class="btn-blue" style="flex:1;" onclick="printShiftReport()">🖨️ Print Report</button>
-                <button class="btn-red" style="flex:1;" onclick="confirmShiftCloseLogout()">Close Shift & Exit</button>
+            <div style="display:flex; flex-direction:column; gap:10px; margin-top:15px;">
+                <button class="btn-green" style="padding: 14px; font-size: 16px; box-shadow: 0 4px 10px rgba(16,185,129,0.2);" onclick="printAndCloseShift()">🖨️ Print Report & Close Shift</button>
+                <button class="btn-red" style="padding: 6px; font-size: 12px; background: transparent; border: 1px solid #ef4444; color: #ef4444;" onclick="confirmShiftCloseLogout()">Bina Print Kiye Exit Karein</button>
             </div>
         </div>
     </div>
@@ -117,33 +124,33 @@
         </div>
     </div>
 
-    <div id="adminView" class="box" style="display:none; border-top: 4px solid #ef4444;">
-        <h2 style="color:#ef4444; margin-top:0;">🛡️ Admin Dashboard</h2>
+    <div id="adminView" class="box" style="display:none; border-top: 4px solid #ff3333;">
+        <h2 style="color:#ff3333; margin-top:0;">🛡️ Admin Control Panel (Secure Premium Mode)</h2>
         
         <div class="stats-grid">
-            <div class="stat-card" style="border-color:#10b981;"><h4>Cash Sale (Total)</h4><h2 id="dashTotalSale">Rs. 0</h2></div>
-            <div class="stat-card" style="border-color:#f59e0b;"><h4>Dukan ka Udhaar (Baqi)</h4><h2 id="dashTotalUdhaar">Rs. 0</h2></div>
-            <div class="stat-card" style="border-color:#ef4444;"><h4>Total Kharche (Expenses)</h4><h2 id="dashTotalExpense">Rs. 0</h2></div>
-            <div class="stat-card" style="border-color:#38bdf8;"><h4>Saman ki Tadad (Stock Left)</h4><h2 id="dashTotalStock">0 Items</h2></div>
-            <div class="stat-card" style="border-color:#8b5cf6; grid-column: span 2;"><h4>Andazan Net Profit (Sale - Kharcha)</h4><h2 id="dashNetProfit">Rs. 0</h2></div>
+            <div class="stat-card" id="card1" style="border-color:#10b981;"><h4>Cash Sale (Total)</h4><h2 id="dashTotalSale">Rs. 0</h2></div>
+            <div class="stat-card" id="card2" style="border-color:#f59e0b;"><h4>Dukan ka Udhaar (Baqi)</h4><h2 id="dashTotalUdhaar">Rs. 0</h2></div>
+            <div class="stat-card" id="card3" style="border-color:#ef4444;"><h4>Total Kharche (Expenses)</h4><h2 id="dashTotalExpense">Rs. 0</h2></div>
+            <div class="stat-card" id="card4" style="border-color:#38bdf8;"><h4>Saman ki Tadad (Stock Left)</h4><h2 id="dashTotalStock">0 Items</h2></div>
+            <div class="stat-card" id="card5" style="border-color:#ff3333; grid-column: span 2;"><h4>Andazan Net Profit (Sale - Kharcha)</h4><h2 id="dashNetProfit">Rs. 0</h2></div>
         </div>
 
         <div style="margin-bottom: 20px; display:flex; gap:10px;">
-            <button class="btn-blue" onclick="switchAdminTab('stock')">📦 Manage Stock</button>
+            <button class="btn-red" style="border: 1px solid white; background:#ff3333;" onclick="switchAdminTab('stock')">📦 Manage Stock</button>
             <button class="btn-yellow" onclick="switchAdminTab('khata')">📒 Grahak Khata</button>
-            <button class="btn-red" onclick="switchAdminTab('expense')">💸 Kharche (Expenses)</button>
+            <button class="btn-red" style="background:#b91c1c;" onclick="switchAdminTab('expense')">💸 Kharche (Expenses)</button>
             <button class="btn-green" onclick="switchAdminTab('report')">📊 Detailed Reports</button>
         </div>
 
         <div id="tab-stock" class="admin-tab">
-            <div style="background: #0f172a; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <div id="subBox1" style="background: #0f172a; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
                 <h3 style="margin-top:0; color:#10b981;">➕ Add Product & Stock</h3>
                 <div style="display:flex; gap:10px; flex-wrap: wrap;">
-                    <input type="text" id="newProdName" placeholder="Item Name" style="flex-grow: 1;">
-                    <input type="number" id="newProdCost" placeholder="Khareed (Cost)" style="width: 120px;">
-                    <input type="number" id="newProdSale" placeholder="Sale Price" style="width: 120px;">
-                    <input type="number" id="newProdQty" placeholder="Total Qty" style="width: 100px;">
-                    <input type="number" id="newProdAlert" placeholder="Low Alert (e.g. 5)" style="width: 120px;">
+                    <input type="text" id="newProdName" placeholder="Item Name" class="adm-inp" style="flex-grow: 1;">
+                    <input type="number" id="newProdCost" placeholder="Khareed (Cost)" class="adm-inp" style="width: 120px;">
+                    <input type="number" id="newProdSale" placeholder="Sale Price" class="adm-inp" style="width: 120px;">
+                    <input type="number" id="newProdQty" placeholder="Total Qty" class="adm-inp" style="width: 100px;">
+                    <input type="number" id="newProdAlert" placeholder="Low Alert" class="adm-inp" style="width: 120px;">
                     <button class="btn-green" onclick="addProduct()">Save Product</button>
                 </div>
             </div>
@@ -154,27 +161,27 @@
                 <div style="display:flex; gap:10px; flex-wrap: wrap;">
                     <div style="flex-grow:1; min-width:200px;">
                         <label style="font-size:12px; color:#94a3b8;">Item Name:</label><br>
-                        <input type="text" id="editProdName" style="width:100%; box-sizing:border-box;">
+                        <input type="text" id="editProdName" class="adm-inp" style="width:100%; box-sizing:border-box;">
                     </div>
                     <div>
                         <label style="font-size:12px; color:#94a3b8;">Khareed (Cost):</label><br>
-                        <input type="number" id="editProdCost" style="width: 110px;">
+                        <input type="number" id="editProdCost" class="adm-inp" style="width: 110px;">
                     </div>
                     <div>
                         <label style="font-size:12px; color:#94a3b8;">Sale Price:</label><br>
-                        <input type="number" id="editProdSale" style="width: 110px;">
+                        <input type="number" id="editProdSale" class="adm-inp" style="width: 110px;">
                     </div>
                     <div>
-                        <label style="font-size:12px; color:#94a3b8;">Kitna Khrida (Bought):</label><br>
-                        <input type="number" id="editProdBought" style="width: 140px;">
+                        <label style="font-size:12px; color:#94a3b8;">Kitna Khrida:</label><br>
+                        <input type="number" id="editProdBought" class="adm-inp" style="width: 140px;">
                     </div>
                     <div>
-                        <label style="font-size:12px; color:#94a3b8;">Kitna Becha (Sold):</label><br>
-                        <input type="number" id="editProdSold" style="width: 130px;">
+                        <label style="font-size:12px; color:#94a3b8;">Kitna Becha:</label><br>
+                        <input type="number" id="editProdSold" class="adm-inp" style="width: 130px;">
                     </div>
                     <div>
                         <label style="font-size:12px; color:#94a3b8;">Low Alert:</label><br>
-                        <input type="number" id="editProdAlert" style="width: 90px;">
+                        <input type="number" id="editProdAlert" class="adm-inp" style="width: 90px;">
                     </div>
                 </div>
                 <div style="margin-top: 10px;">
@@ -186,12 +193,12 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>Cost / Sale</th>
-                        <th style="color:#38bdf8;">Kitna Khrida (Bought)</th>
-                        <th style="color:#f59e0b;">Kitna Becha (Sold)</th>
-                        <th style="color:#10b981;">Kitna Baqi Hai</th>
-                        <th>Action</th>
+                        <th class="adm-th">Name</th>
+                        <th class="adm-th">Cost / Sale</th>
+                        <th class="adm-th" style="color:#38bdf8;">Kitna Khrida</th>
+                        <th class="adm-th" style="color:#f59e0b;">Kitna Becha</th>
+                        <th class="adm-th" style="color:#10b981;">Kitna Baqi Hai</th>
+                        <th class="adm-th">Action</th>
                     </tr>
                 </thead>
                 <tbody id="stockTableBody"></tbody>
@@ -201,20 +208,20 @@
         <div id="tab-khata" class="admin-tab" style="display:none;">
             <h3 style="color:#f59e0b;">📒 Grahak Khata (Udhaar Details)</h3>
             <table>
-                <thead><tr><th>Mobile Number</th><th>Naam</th><th>Total Udhaar Baqi</th><th>Action</th></tr></thead>
+                <thead><tr><th class="adm-th">Mobile Number</th><th class="adm-th">Naam</th><th class="adm-th">Total Udhaar Baqi</th><th class="adm-th">Action</th></tr></thead>
                 <tbody id="khataTableBody"></tbody>
             </table>
         </div>
 
         <div id="tab-expense" class="admin-tab" style="display:none;">
-            <div style="background: #0f172a; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <div id="subBox2" style="background: #0f172a; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
                 <h3 style="margin-top:0; color:#ef4444;">💸 Naya Kharcha Note Karein</h3>
-                <input type="text" id="expDesc" placeholder="Kharcha kis cheez ka hai?" style="width: 40%;">
-                <input type="number" id="expAmt" placeholder="Amount (Rs.)">
-                <button class="btn-red" onclick="addExpense()">Save Expense</button>
+                <input type="text" id="expDesc" placeholder="Kharcha kis cheez ka hai?" class="adm-inp" style="width: 40%;">
+                <input type="number" id="expAmt" placeholder="Amount (Rs.)" class="adm-inp">
+                <button class="btn-red" style="background:#ff3333;" onclick="addExpense()">Save Expense</button>
             </div>
             <table>
-                <thead><tr><th>Date</th><th>Tafseel (Description)</th><th>Raqam (Amount)</th><th>Added By</th></tr></thead>
+                <thead><tr><th class="adm-th">Date</th><th class="adm-th">Tafseel (Description)</th><th class="adm-th">Raqam (Amount)</th><th class="adm-th">Added By</th></tr></thead>
                 <tbody id="expenseTableBody"></tbody>
             </table>
         </div>
@@ -222,15 +229,15 @@
         <div id="tab-report" class="admin-tab" style="display:none;">
             <h3 style="color:#38bdf8;">📊 Smart Business Report Center</h3>
             
-            <div style="background:#0f172a; padding:15px; border-radius:8px; display:flex; gap:15px; align-items:center; flex-wrap:wrap; margin-bottom:15px;">
+            <div id="subBox3" style="background:#0f172a; padding:15px; border-radius:8px; display:flex; gap:15px; align-items:center; flex-wrap:wrap; margin-bottom:15px;">
                 <div>
-                    <label>Custom Date Range: </label>
-                    <input type="date" id="repStart"> to <input type="date" id="repEnd">
+                    <label>Custom Range: </label>
+                    <input type="date" id="repStart" class="adm-inp"> to <input type="date" id="repEnd" class="adm-inp">
                 </div>
                 <div style="border-left: 2px solid #334155; padding-left:15px;">
-                    <label>Month Selection: </label>
-                    <select id="repMonthSelect" onchange="setQuickDates()">
-                        <option value="">-- Select Month --</option>
+                    <label>Month: </label>
+                    <select id="repMonthSelect" class="adm-inp" onchange="setQuickDates()">
+                        <option value="">-- All Months (Yearly) --</option>
                         <option value="01">January</option><option value="02">February</option>
                         <option value="03">March</option><option value="04">April</option>
                         <option value="05">May</option><option value="06">June</option>
@@ -240,11 +247,10 @@
                     </select>
                 </div>
                 <div style="border-left: 2px solid #334155; padding-left:15px;">
-                    <label>Year Selection: </label>
-                    <select id="repYearSelect" onchange="setQuickDates()">
-                        <option value="">-- Select Year --</option>
-                        <option value="2025">2025</option>
+                    <label>Year: </label>
+                    <select id="repYearSelect" class="adm-inp" onchange="setQuickDates()">
                         <option value="2026">2026</option>
+                        <option value="2025">2025</option>
                         <option value="2027">2027</option>
                         <option value="2028">2028</option>
                     </select>
@@ -256,26 +262,16 @@
             <div id="reportPrintArea" style="background:white; color:black; padding:20px; border-radius:8px; display:none;">
                 <h2 style="text-align:center; margin:0;">AL KHADIM MART - PERFORMANCE REPORT</h2>
                 <p style="text-align:center; margin:5px 0 15px 0; font-weight:bold;" id="repDateRange"></p><hr>
-                
-                <h3 style="margin-bottom:5px;">💰 Financial Breakdown</h3>
+                <h3>💰 Financial Breakdown</h3>
                 <p><strong>Total Gross Sales:</strong> Rs. <span id="rTotalSales">0</span></p>
-                <p><strong>Cash Received (Naqd Asset):</strong> Rs. <span id="rCashSales">0</span></p>
-                <p><strong>Udhaar Given (Market Out):</strong> Rs. <span id="rUdhaar">0</span></p>
-                <p style="color:red;"><strong>Total Expenses (Kharche):</strong> Rs. <span id="rExpenses">0</span></p>
-                <p style="color:green; font-size:16px;"><strong>Net Business Profit (Kharche nikal kar):</strong> Rs. <span id="rNetProfit">0</span></p>
-                
+                <p><strong>Cash Received:</strong> Rs. <span id="rCashSales">0</span></p>
+                <p><strong>Udhaar Given:</strong> Rs. <span id="rUdhaar">0</span></p>
+                <p style="color:red;"><strong>Total Expenses:</strong> Rs. <span id="rExpenses">0</span></p>
+                <p style="color:green; font-size:16px;"><strong>Net Business Profit:</strong> Rs. <span id="rNetProfit">0</span></p>
                 <hr>
-                <h3 style="margin-bottom:5px;">👤 Salesman Shift & Sales Summary</h3>
+                <h3>👤 Salesman Shift Summary</h3>
                 <table style="color:black; font-size:14px; border:1px solid #ccc; width:100%;">
-                    <thead>
-                        <tr style="background:#eee;">
-                            <th>Salesman Naam</th>
-                            <th>Kul Bill</th>
-                            <th>Kul Sale</th>
-                            <th>Naqd Mila (Cash)</th>
-                            <th>Udhaar Diya</th>
-                        </tr>
-                    </thead>
+                    <thead><tr style="background:#eee;"><th>Salesman Naam</th><th>Kul Bill</th><th>Kul Sale</th><th>Naqd Mila</th><th>Udhaar Diya</th></tr></thead>
                     <tbody id="rCashierBody"></tbody>
                 </table>
             </div>
@@ -286,18 +282,15 @@
         <h2 style="text-align:center; margin:0; font-size:18px;">Al Khadim Mart</h2>
         <p style="text-align:center; font-size:12px; margin:0;">Invoice / Bill</p>
         <p style="text-align:center; font-size:12px; margin-bottom:10px;" id="billDateText"></p>
-        
         <div id="billCustomerInfo" style="font-size:12px; border-bottom:1px dashed black; padding-bottom:5px; margin-bottom:5px; display:none;">
             <strong>Customer: </strong><span id="bCustName"></span><br>
             <strong>Phone: </strong><span id="bCustPhone"></span>
         </div>
-
         <table style="width:100%; font-size:12px; color: black; margin: 5px 0;">
             <thead><tr style="border-bottom:1px dashed black;"><th style="text-align:left;">Item</th><th style="text-align:center;">Qty</th><th style="text-align:right;">Total</th></tr></thead>
             <tbody id="billPrintTableBody"></tbody>
         </table>
         <hr style="border:1px dashed black;">
-        
         <div style="font-size:13px; text-align:right;">
             <p style="margin:2px 0;"><strong>Bill Amount: Rs. <span id="bTotal"></span></strong></p>
             <div id="billUdhaarDetails" style="display:none; text-align:right; font-size:12px;">
@@ -310,55 +303,20 @@
     </div>
 
     <script>
-        const imageBaselineStock = [
-            { id: "P1", name: "Hilal Cake", cost: 181.25, price: 200, qty: 24, bought: 24, sold: 0, lowAlert: 5 },
-            { id: "P2", name: "Crust Wafer", cost: 188.88, price: 200, qty: 18, bought: 18, sold: 0, lowAlert: 5 },
-            { id: "P3", name: "Treat Candy", cost: 94.58, price: 110, qty: 24, bought: 24, sold: 0, lowAlert: 5 },
-            { id: "P4", name: "Kulfa Jar", cost: 188.88, price: 200, qty: 18, bought: 18, sold: 0, lowAlert: 5 },
-            { id: "P5", name: "Rite", cost: 261.11, price: 270, qty: 18, bought: 18, sold: 0, lowAlert: 5 },
-            { id: "P6", name: "Bazooka", cost: 154.16, price: 200, qty: 12, bought: 12, sold: 0, lowAlert: 5 },
-            { id: "P7", name: "Tuk Tok", cost: 120, price: 130, qty: 18, bought: 18, sold: 0, lowAlert: 5 },
-            { id: "P8", name: "OMax wafer", cost: 194.16, price: 205, qty: 24, bought: 24, sold: 0, lowAlert: 5 },
-            { id: "P9", name: "Matar Masala", cost: 113.88, price: 130, qty: 18, bought: 18, sold: 0, lowAlert: 5 },
-            { id: "P10", name: "Daty", cost: 183.33, price: 200, qty: 18, bought: 18, sold: 0, lowAlert: 5 },
-            { id: "P11", name: "Minto gum", cost: 187.5, price: 200, qty: 12, bought: 12, sold: 0, lowAlert: 5 },
-            { id: "P12", name: "Twisto", cost: 237.5, price: 250, qty: 12, bought: 12, sold: 0, lowAlert: 5 },
-            { id: "P13", name: "Pip&Nut", cost: 192.77, price: 200, qty: 18, bought: 18, sold: 0, lowAlert: 5 }
-        ];
-
-        let products = JSON.parse(localStorage.getItem("mart_products")) || JSON.parse(localStorage.getItem("martProducts")) || JSON.parse(localStorage.getItem("products")) || [];
+        let products = JSON.parse(localStorage.getItem("mart_products")) || [];
         
-        if (products.length === 0) {
-            products = imageBaselineStock;
-        }
-
-        // ================= CRITICAL DATA SANITIZER LOOP =================
-        // Yeh loop aapke purane database se "NaN" ya "undefined" ko mukammal khatam kar dega
         products.forEach(p => {
-            if (!p.id) p.id = "P" + Math.random().toString(36).substr(2, 9);
-            if (!p.name) p.name = "Unknown Item";
-            
             p.cost = parseFloat(p.cost) || 0;
             p.price = parseFloat(p.price) || 0;
-            
-            let currentQty = parseInt(p.qty);
-            if (isNaN(currentQty)) currentQty = 0;
-            
-            let currentBought = parseInt(p.bought);
-            let currentSold = parseInt(p.sold);
-            
-            if (isNaN(currentBought)) currentBought = currentQty;
-            if (isNaN(currentSold)) currentSold = 0;
-            
-            p.bought = currentBought;
-            p.sold = currentSold;
-            p.qty = currentBought - currentSold; 
+            p.bought = parseInt(p.bought) || parseInt(p.qty) || 0;
+            p.sold = parseInt(p.sold) || 0;
+            p.qty = p.bought - p.sold;
             p.lowAlert = parseInt(p.lowAlert) || 5;
         });
 
-        let customers = JSON.parse(localStorage.getItem("mart_customers")) || JSON.parse(localStorage.getItem("customers")) || {};
-        let expenses = JSON.parse(localStorage.getItem("mart_expenses")) || JSON.parse(localStorage.getItem("expenses")) || [];
-        let salesHistory = JSON.parse(localStorage.getItem("mart_sales")) || JSON.parse(localStorage.getItem("salesHistory")) || [];
+        let customers = JSON.parse(localStorage.getItem("mart_customers")) || {};
+        let expenses = JSON.parse(localStorage.getItem("mart_expenses")) || [];
+        let salesHistory = JSON.parse(localStorage.getItem("mart_sales")) || [];
         
         function saveDB() {
             localStorage.setItem("mart_products", JSON.stringify(products));
@@ -366,9 +324,6 @@
             localStorage.setItem("mart_customers", JSON.stringify(customers));
             localStorage.setItem("mart_expenses", JSON.stringify(expenses));
         }
-        
-        // Initial clean save
-        saveDB();
 
         const systemUsers = { "Admin": "1234", "Wasi": "1111", "Ubaid": "2222", "Yassin": "3333" };
         let currentUser = "";
@@ -384,13 +339,26 @@
                 document.getElementById("loginPasswordInput").value = "";
                 
                 let logoutBtn = document.getElementById("logoutActionButton");
+                
                 if(u === "Admin") {
+                    // Premium Ultra Dark Design Activator
+                    document.body.classList.add("admin-mode-active");
+                    document.getElementById("adminView").classList.add("admin-box");
+                    document.getElementById("mainHeaderTitle").style.color = "#ff3333";
+                    document.getElementById("currentActiveUserText").style.color = "#ff3333";
+                    
+                    for(let i=1; i<=5; i++) { document.getElementById("card"+i).classList.add("admin-card"); }
+                    for(let i=1; i<=3; i++) { document.getElementById("subBox"+i).classList.add("admin-box"); }
+                    document.querySelectorAll(".adm-inp").forEach(el => el.classList.add("admin-input"));
+
                     logoutBtn.innerText = "Logout Admin";
                     logoutBtn.className = "btn-red";
                     document.getElementById("adminView").style.display = "block";
                     document.getElementById("counterView").style.display = "none";
                     updateAdminDashboard();
                 } else {
+                    document.body.classList.remove("admin-mode-active");
+                    document.getElementById("mainHeaderTitle").style.color = "#38bdf8";
                     logoutBtn.innerText = "🔒 Close Shift & Logout";
                     logoutBtn.className = "btn-yellow";
                     document.getElementById("adminView").style.display = "none";
@@ -400,42 +368,40 @@
         }
 
         function handleLogoutAction() {
-            if(currentUser === "Admin") {
-                location.reload();
-            } else {
-                openShiftClosingReport();
-            }
+            if(currentUser === "Admin") { location.reload(); } 
+            else { openShiftClosingReport(); }
         }
 
         function openShiftClosingReport() {
             let today = new Date().toISOString().split('T')[0];
             let shiftBills = 0, shiftTotal = 0, shiftCash = 0, shiftUdhaar = 0;
-
             salesHistory.forEach(s => {
                 if(s.cashier === currentUser && s.date === today) {
                     if(s.total > 0) shiftBills++;
-                    shiftTotal += s.total;
-                    shiftCash += s.cashPaid;
-                    let uDiff = s.total - s.cashPaid;
-                    if(uDiff > 0) shiftUdhaar += uDiff;
+                    shiftTotal += s.total; shiftCash += s.cashPaid;
+                    let uDiff = s.total - s.cashPaid; if(uDiff > 0) shiftUdhaar += uDiff;
                 }
             });
-
             document.getElementById("scName").innerText = currentUser;
             document.getElementById("scTime").innerText = new Date().toLocaleString();
             document.getElementById("scBills").innerText = shiftBills;
             document.getElementById("scTotalSale").innerText = "Rs. " + shiftTotal;
             document.getElementById("scCash").innerText = "Rs. " + shiftCash;
             document.getElementById("scUdhaar").innerText = "Rs. " + shiftUdhaar;
-
             document.getElementById("shiftModal").style.display = "flex";
         }
 
-        function printShiftReport() {
+        // Cashier prints report and shift automatically logs out seamlessly
+        function printAndCloseShift() {
             let area = document.getElementById("shiftPrintArea");
             area.classList.add("print-active-target");
             window.print();
             area.classList.remove("print-active-target");
+            
+            setTimeout(() => {
+                document.getElementById("shiftModal").style.display = "none";
+                location.reload();
+            }, 500);
         }
 
         function confirmShiftCloseLogout() {
@@ -443,24 +409,9 @@
             location.reload();
         }
 
-        function setQuickDates() {
-            let month = document.getElementById("repMonthSelect").value;
-            let year = document.getElementById("repYearSelect").value || new Date().getFullYear();
-            
-            if(month) {
-                document.getElementById("repStart").value = `${year}-${month}-01`;
-                let lastDay = new Date(year, parseInt(month), 0).getDate();
-                document.getElementById("repEnd").value = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
-            } else if(year) {
-                document.getElementById("repStart").value = `${year}-01-01`;
-                document.getElementById("repEnd").value = `${year}-12-31`;
-            }
-        }
-
         function manualSearch() {
             let val = document.getElementById("barcodeInput").value.toLowerCase().trim();
             if(val === "") return;
-            
             let pIndex = products.findIndex(p => p.name.toLowerCase().includes(val) || p.id === val);
             if(pIndex > -1) { 
                 let p = products[pIndex];
@@ -486,12 +437,10 @@
             let html = "", net = 0;
             cart.forEach((c, i) => {
                 net += (c.price * c.qty);
-                html += `<tr>
-                    <td>${c.name}</td><td>Rs. ${c.price}</td>
+                html += `<tr><td>${c.name}</td><td>Rs. ${c.price}</td>
                     <td><button onclick="changeQty(${i}, -1)">-</button> ${c.qty} <button onclick="changeQty(${i}, 1)">+</button></td>
                     <td>Rs. ${c.price * c.qty}</td>
-                    <td><button class="btn-red" onclick="cart.splice(${i}, 1); updateCartTable();">X</button></td>
-                </tr>`;
+                    <td><button class="btn-red" onclick="cart.splice(${i}, 1); updateCartTable();">X</button></td></tr>`;
             });
             document.getElementById("cartTableBody").innerHTML = html;
             document.getElementById("netTotalText").innerText = net;
@@ -505,9 +454,7 @@
             if(phone && customers[phone]) {
                 document.getElementById("custName").value = customers[phone].name;
                 oldBal = customers[phone].balance;
-            } else if (phone === "") {
-                document.getElementById("custName").value = "";
-            }
+            } else if (phone === "") { document.getElementById("custName").value = ""; }
             document.getElementById("custOldBalance").innerText = oldBal;
             calculateUdhaar();
         }
@@ -516,22 +463,18 @@
             let net = parseFloat(document.getElementById("netTotalText").innerText) || 0;
             let cash = parseFloat(document.getElementById("cashReceived").value) || 0;
             let oldBal = parseFloat(document.getElementById("custOldBalance").innerText) || 0;
-            let nayaBaqi = (oldBal + net) - cash;
-            document.getElementById("newUdhaarText").innerText = nayaBaqi;
+            document.getElementById("newUdhaarText").innerText = (oldBal + net) - cash;
         }
 
         function checkoutBill() {
             if(cart.length === 0) return alert("Cart khali hai!");
-            
             let phone = document.getElementById("custPhone").value.trim();
             let name = document.getElementById("custName").value.trim();
             let netTotal = parseFloat(document.getElementById("netTotalText").innerText);
             let cash = parseFloat(document.getElementById("cashReceived").value) || 0;
-            
             let costTotal = cart.reduce((sum, item) => sum + (item.cost * item.qty), 0);
             let profit = netTotal - costTotal;
             let date = new Date().toISOString().split('T')[0];
-            
             let oldBal = 0, newBal = 0;
 
             if(phone) {
@@ -540,16 +483,11 @@
                 newBal = (oldBal + netTotal) - cash;
                 customers[phone].balance = newBal;
                 customers[phone].history.push({ date, billAmount: netTotal, paid: cash });
-            } else if (cash < netTotal) {
-                return alert("Udhaar ke liye Customer ka Mobile Number likhna zaroori hai!");
-            }
+            } else if (cash < netTotal) { return alert("Udhaar ke liye Mobile Number likhna zaroori hai!"); }
 
             cart.forEach(c => {
                 let p = products.find(prod => prod.id === c.id);
-                if(p) {
-                    p.sold = (parseInt(p.sold) || 0) + parseInt(c.qty);
-                    p.qty = (parseInt(p.bought) || 0) - p.sold;
-                }
+                if(p) { p.sold = (parseInt(p.sold) || 0) + parseInt(c.qty); p.qty = (parseInt(p.bought) || 0) - p.sold; }
             });
 
             salesHistory.push({ date, cashier: currentUser, total: netTotal, profit, cashPaid: cash, phone });
@@ -560,9 +498,7 @@
                 document.getElementById("bCustName").innerText = customers[phone].name;
                 document.getElementById("bCustPhone").innerText = phone;
                 document.getElementById("billUdhaarDetails").style.display = "block";
-                document.getElementById("bOldB").innerText = oldBal;
-                document.getElementById("bPaid").innerText = cash;
-                document.getElementById("bNewB").innerText = newBal;
+                document.getElementById("bOldB").innerText = oldBal; document.getElementById("bPaid").innerText = cash; document.getElementById("bNewB").innerText = newBal;
             } else {
                 document.getElementById("billCustomerInfo").style.display = "none";
                 document.getElementById("billUdhaarDetails").style.display = "none";
@@ -570,7 +506,6 @@
 
             let pTable = "";
             cart.forEach(c => { pTable += `<tr><td>${c.name}</td><td style="text-align:center;">${c.qty}</td><td style="text-align:right;">${c.price * c.qty}</td></tr>`; });
-            
             document.getElementById("billPrintTableBody").innerHTML = pTable;
             document.getElementById("bTotal").innerText = netTotal;
             document.getElementById("billDateText").innerText = date;
@@ -581,9 +516,7 @@
             window.print();
             area.classList.remove("print-active-target");
 
-            cart = []; 
-            document.getElementById("custPhone").value = ""; 
-            document.getElementById("custName").value = "";
+            cart = []; document.getElementById("custPhone").value = ""; document.getElementById("custName").value = "";
             updateCartTable();
             if(currentUser === "Admin") updateAdminDashboard();
         }
@@ -598,7 +531,6 @@
 
         function updateAdminDashboard() {
             let tSale = 0, tProfit = 0, tUdhaar = 0, tExpense = 0, tStockQty = 0;
-            
             salesHistory.forEach(s => { tSale += s.total; tProfit += s.profit; });
             expenses.forEach(e => { tExpense += parseFloat(e.amount); });
             for(let key in customers) { tUdhaar += customers[key].balance; }
@@ -616,8 +548,7 @@
                     <td>
                         <button class="btn-yellow" onclick="addMoreStock(${i})">Add Stock</button> 
                         <button class="btn-blue" onclick="openEditSection(${i})">📝 Edit</button>
-                    </td>
-                </tr>`;
+                    </td></tr>`;
             });
 
             document.getElementById("dashTotalSale").innerText = "Rs. " + tSale;
@@ -634,38 +565,16 @@
             let price = document.getElementById("newProdSale").value;
             let qty = document.getElementById("newProdQty").value;
             let alertLevel = document.getElementById("newProdAlert").value || 5;
-
             if(!name || !price) return alert("Name aur Sale Price lazmi hai.");
-            
             let qtyVal = parseInt(qty||0);
-            products.push({ 
-                id: "P"+Date.now(), 
-                name, 
-                cost: parseFloat(cost||price), 
-                price: parseFloat(price), 
-                qty: qtyVal, 
-                bought: qtyVal,
-                sold: 0,
-                lowAlert: parseInt(alertLevel) 
-            });
-            saveDB();
-            updateAdminDashboard();
-            document.getElementById("newProdName").value = "";
-            document.getElementById("newProdCost").value = "";
-            document.getElementById("newProdSale").value = "";
-            document.getElementById("newProdQty").value = "";
+            products.push({ id: "P"+Date.now(), name, cost: parseFloat(cost||price), price: parseFloat(price), qty: qtyVal, bought: qtyVal, sold: 0, lowAlert: parseInt(alertLevel) });
+            saveDB(); updateAdminDashboard();
+            document.getElementById("newProdName").value = ""; document.getElementById("newProdCost").value = ""; document.getElementById("newProdSale").value = ""; document.getElementById("newProdQty").value = "";
         }
 
         function openEditSection(i) {
             let p = products[i];
-            document.getElementById("editProdIndex").value = i;
-            document.getElementById("editProdName").value = p.name;
-            document.getElementById("editProdCost").value = p.cost;
-            document.getElementById("editProdSale").value = p.price;
-            document.getElementById("editProdBought").value = p.bought;
-            document.getElementById("editProdSold").value = p.sold;
-            document.getElementById("editProdAlert").value = p.lowAlert || 5;
-            
+            document.getElementById("editProdIndex").value = i; document.getElementById("editProdName").value = p.name; document.getElementById("editProdCost").value = p.cost; document.getElementById("editProdSale").value = p.price; document.getElementById("editProdBought").value = p.bought; document.getElementById("editProdSold").value = p.sold; document.getElementById("editProdAlert").value = p.lowAlert || 5;
             document.getElementById("editProdSection").style.display = "block";
             window.scrollTo(0, 200);
         }
@@ -679,42 +588,23 @@
             let sold = parseInt(document.getElementById("editProdSold").value) || 0;
             let lowAlert = parseInt(document.getElementById("editProdAlert").value) || 5;
 
-            if(!name || !price) return alert("Name aur Sale Price lazmi hai.");
-
-            products[i].name = name;
-            products[i].cost = cost;
-            products[i].price = price;
-            products[i].bought = bought;
-            products[i].sold = sold;
-            products[i].qty = (bought - sold); 
-            products[i].lowAlert = lowAlert;
-
-            saveDB();
-            updateAdminDashboard();
-            document.getElementById("editProdSection").style.display = "none";
-            alert("Saman ka record successfully update ho gaya!");
-        }
-
-        function cancelProductEdit() {
+            products[i].name = name; products[i].cost = cost; products[i].price = price; products[i].bought = bought; products[i].sold = sold; products[i].qty = (bought - sold); products[i].lowAlert = lowAlert;
+            saveDB(); updateAdminDashboard();
             document.getElementById("editProdSection").style.display = "none";
         }
+
+        function cancelProductEdit() { document.getElementById("editProdSection").style.display = "none"; }
         
         function addMoreStock(i) {
             let q = prompt("Kitna naya stock aya hai?");
-            if(q && !isNaN(q)) { 
-                products[i].bought = (parseInt(products[i].bought) || 0) + parseInt(q); 
-                products[i].qty = products[i].bought - (parseInt(products[i].sold) || 0);
-                saveDB(); 
-                updateAdminDashboard(); 
-            }
+            if(q && !isNaN(q)) { products[i].bought = (parseInt(products[i].bought) || 0) + parseInt(q); products[i].qty = products[i].bought - (parseInt(products[i].sold) || 0); saveDB(); updateAdminDashboard(); }
         }
 
         function updateKhataTable() {
             let html = "";
             for(let phone in customers) {
                 if(customers[phone].balance > 0) {
-                    html += `<tr><td>${phone}</td><td>${customers[phone].name}</td><td style="color:red; font-weight:bold;">Rs. ${customers[phone].balance}</td>
-                    <td><button class="btn-green" onclick="receiveUdhaar('${phone}')">Paise Jama Karein</button></td></tr>`;
+                    html += `<tr><td>${phone}</td><td>${customers[phone].name}</td><td style="color:red; font-weight:bold;">Rs. ${customers[phone].balance}</td><td><button class="btn-green" onclick="receiveUdhaar('${phone}')">Paise Jama Karein</button></td></tr>`;
                 }
             }
             document.getElementById("khataTableBody").innerHTML = html;
@@ -730,82 +620,65 @@
         }
 
         function addExpense() {
-            let desc = document.getElementById("expDesc").value;
-            let amt = document.getElementById("expAmt").value;
+            let desc = document.getElementById("expDesc").value; let amt = document.getElementById("expAmt").value;
             if(!desc || !amt) return alert("Details bharein.");
             expenses.push({ date: new Date().toISOString().split('T')[0], desc, amount: parseFloat(amt), by: currentUser });
             saveDB(); updateExpenseTable(); updateAdminDashboard();
-            document.getElementById("expDesc").value = "";
-            document.getElementById("expAmt").value = "";
+            document.getElementById("expDesc").value = ""; document.getElementById("expAmt").value = "";
         }
 
         function updateExpenseTable() {
-            let html = "";
-            expenses.forEach(e => { html += `<tr><td>${e.date}</td><td>${e.desc}</td><td>Rs. ${e.amount}</td><td>${e.by}</td></tr>`; });
+            let html = ""; expenses.forEach(e => { html += `<tr><td>${e.date}</td><td>${e.desc}</td><td>Rs. ${e.amount}</td><td>${e.by}</td></tr>`; });
             document.getElementById("expenseTableBody").innerHTML = html;
         }
 
-        function generateReport() {
-            let sDate = document.getElementById("repStart").value;
-            let eDate = document.getElementById("repEnd").value;
-            if(!sDate || !eDate) return alert("Meharbani karke tareekh select karein!");
+        // Quick dates handling Month as well as Yearly selection bounds perfectly
+        function setQuickDates() {
+            let month = document.getElementById("repMonthSelect").value;
+            let year = document.getElementById("repYearSelect").value || new Date().getFullYear();
+            if(month) {
+                document.getElementById("repStart").value = `${year}-${month}-01`;
+                let lastDay = new Date(year, parseInt(month), 0).getDate();
+                document.getElementById("repEnd").value = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
+            } else {
+                // If no month is selected, make it a Full Yearly Custom Range Filter
+                document.getElementById("repStart").value = `${year}-01-01`;
+                document.getElementById("repEnd").value = `${year}-12-31`;
+            }
+        }
 
-            let rSale = 0, rCash = 0, rProfit = 0, rExp = 0;
-            let cashierData = {};
+        function generateReport() {
+            let sDate = document.getElementById("repStart").value; let eDate = document.getElementById("repEnd").value;
+            if(!sDate || !eDate) return alert("Tareekh select karein!");
+            let rSale = 0, rCash = 0, rProfit = 0, rExp = 0; let cashierData = {};
 
             salesHistory.forEach(s => {
                 if(s.date >= sDate && s.date <= eDate) {
-                    rSale += s.total; 
-                    rCash += s.cashPaid; 
-                    rProfit += s.profit;
-                    
-                    let c = s.cashier || "Unknown";
-                    if(!cashierData[c]) cashierData[c] = { bills: 0, total: 0, cash: 0, udhaar: 0 };
-                    
+                    rSale += s.total; rCash += s.cashPaid; rProfit += s.profit;
+                    let c = s.cashier || "Unknown"; if(!cashierData[c]) cashierData[c] = { bills: 0, total: 0, cash: 0, udhaar: 0 };
                     if(s.total > 0) cashierData[c].bills++;
-                    cashierData[c].total += s.total; 
-                    cashierData[c].cash += s.cashPaid; 
-                    
-                    let billUdhaar = s.total - s.cashPaid;
-                    if(billUdhaar > 0) cashierData[c].udhaar += billUdhaar;
+                    cashierData[c].total += s.total; cashierData[c].cash += s.cashPaid;
+                    let bUdh = s.total - s.cashPaid; if(bUdh > 0) cashierData[c].udhaar += bUdh;
                 }
             });
-
             expenses.forEach(e => { if(e.date >= sDate && e.date <= eDate) rExp += e.amount; });
 
             document.getElementById("reportPrintArea").style.display = "block";
             document.getElementById("repDateRange").innerText = `Report Duration: ${sDate} To ${eDate}`;
-            document.getElementById("rTotalSales").innerText = rSale;
-            document.getElementById("rCashSales").innerText = rCash;
+            document.getElementById("rTotalSales").innerText = rSale; document.getElementById("rCashSales").innerText = rCash;
             document.getElementById("rUdhaar").innerText = (rSale - rCash > 0) ? (rSale - rCash) : 0;
-            document.getElementById("rExpenses").innerText = rExp;
-            document.getElementById("rNetProfit").innerText = rProfit - rExp;
+            document.getElementById("rExpenses").innerText = rExp; document.getElementById("rNetProfit").innerText = rProfit - rExp;
 
             let cHtml = "";
-            for(let k in cashierData) { 
-                cHtml += `<tr>
-                    <td><strong>${k}</strong></td>
-                    <td>${cashierData[k].bills}</td>
-                    <td style="color: #3b82f6; font-weight:bold;">Rs. ${cashierData[k].total}</td>
-                    <td style="color: #10b981;">Rs. ${cashierData[k].cash}</td>
-                    <td style="color: #ef4444;">Rs. ${cashierData[k].udhaar}</td>
-                </tr>`; 
+            for(let k in cashierData) {
+                cHtml += `<tr><td><strong>${k}</strong></td><td>${cashierData[k].bills}</td><td style="color: #3b82f6; font-weight:bold;">Rs. ${cashierData[k].total}</td><td style="color: #10b981;">Rs. ${cashierData[k].cash}</td><td style="color: #ef4444;">Rs. ${cashierData[k].udhaar}</td></tr>`;
             }
-            if(Object.keys(cashierData).length === 0) {
-                cHtml = `<tr><td colspan="5" style="text-align:center;">Chuni hui dates me koi sale nahi hui.</td></tr>`;
-            }
-            document.getElementById("rCashierBody").innerHTML = cHtml;
+            document.getElementById("rCashierBody").innerHTML = cHtml || `<tr><td colspan="5" style="text-align:center;">Koi sale nahi hui.</td></tr>`;
         }
 
         function printReport() {
             let area = document.getElementById("reportPrintArea");
-            area.classList.add("print-active-target");
-            window.print();
-            area.classList.remove("print-active-target");
-        }
-
-        window.onload = function() {
-            if(currentUser === "Admin") updateAdminDashboard();
+            area.classList.add("print-active-target"); window.print(); area.classList.remove("print-active-target");
         }
     </script>
 </body>
