@@ -29,7 +29,6 @@
         #loginOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; display: flex; justify-content: center; align-items: center; z-index: 1000; }
         .login-box { background: #1e293b; padding: 40px; border-radius: 12px; text-align: center; width: 300px; }
         
-        /* Modal Style for Shift Closing */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.9); justify-content: center; align-items: center; z-index: 2000; }
         .modal-content { background: #1e293b; padding: 25px; border-radius: 12px; width: 90%; max-width: 500px; border: 2px solid #38bdf8; }
 
@@ -155,7 +154,7 @@
                 <div style="display:flex; gap:10px; flex-wrap: wrap;">
                     <div style="flex-grow:1; min-width:200px;">
                         <label style="font-size:12px; color:#94a3b8;">Item Name:</label><br>
-                        <input type="text" id="editProdName" placeholder="Item Name" style="width:100%; box-sizing:border-box;">
+                        <input type="text" id="editProdName" style="width:100%; box-sizing:border-box;">
                     </div>
                     <div>
                         <label style="font-size:12px; color:#94a3b8;">Khareed (Cost):</label><br>
@@ -210,7 +209,7 @@
         <div id="tab-expense" class="admin-tab" style="display:none;">
             <div style="background: #0f172a; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
                 <h3 style="margin-top:0; color:#ef4444;">💸 Naya Kharcha Note Karein</h3>
-                <input type="text" id="expDesc" placeholder="Kharcha kis cheez ka hai? (e.g., Rent, Bill)" style="width: 40%;">
+                <input type="text" id="expDesc" placeholder="Kharcha kis cheez ka hai?" style="width: 40%;">
                 <input type="number" id="expAmt" placeholder="Amount (Rs.)">
                 <button class="btn-red" onclick="addExpense()">Save Expense</button>
             </div>
@@ -333,21 +332,47 @@
             products = imageBaselineStock;
         }
 
+        // ================= CRITICAL DATA SANITIZER LOOP =================
+        // Yeh loop aapke purane database se "NaN" ya "undefined" ko mukammal khatam kar dega
+        products.forEach(p => {
+            if (!p.id) p.id = "P" + Math.random().toString(36).substr(2, 9);
+            if (!p.name) p.name = "Unknown Item";
+            
+            p.cost = parseFloat(p.cost) || 0;
+            p.price = parseFloat(p.price) || 0;
+            
+            let currentQty = parseInt(p.qty);
+            if (isNaN(currentQty)) currentQty = 0;
+            
+            let currentBought = parseInt(p.bought);
+            let currentSold = parseInt(p.sold);
+            
+            if (isNaN(currentBought)) currentBought = currentQty;
+            if (isNaN(currentSold)) currentSold = 0;
+            
+            p.bought = currentBought;
+            p.sold = currentSold;
+            p.qty = currentBought - currentSold; 
+            p.lowAlert = parseInt(p.lowAlert) || 5;
+        });
+
         let customers = JSON.parse(localStorage.getItem("mart_customers")) || JSON.parse(localStorage.getItem("customers")) || {};
         let expenses = JSON.parse(localStorage.getItem("mart_expenses")) || JSON.parse(localStorage.getItem("expenses")) || [];
         let salesHistory = JSON.parse(localStorage.getItem("mart_sales")) || JSON.parse(localStorage.getItem("salesHistory")) || [];
         
-        // Configured users
-        const systemUsers = { "Admin": "1234", "Wasi": "1111", "Ubaid": "2222", "Yassin": "3333" };
-        let currentUser = "";
-        let cart = [];
-
         function saveDB() {
             localStorage.setItem("mart_products", JSON.stringify(products));
             localStorage.setItem("mart_sales", JSON.stringify(salesHistory));
             localStorage.setItem("mart_customers", JSON.stringify(customers));
             localStorage.setItem("mart_expenses", JSON.stringify(expenses));
         }
+        
+        // Initial clean save
+        saveDB();
+
+        const systemUsers = { "Admin": "1234", "Wasi": "1111", "Ubaid": "2222", "Yassin": "3333" };
+        let currentUser = "";
+        let cart = [];
 
         function attemptLogin() {
             let u = document.getElementById("loginUserSelect").value;
@@ -382,7 +407,6 @@
             }
         }
 
-        // --- CASHIER SHIFT CLOSING LOGIC ---
         function openShiftClosingReport() {
             let today = new Date().toISOString().split('T')[0];
             let shiftBills = 0, shiftTotal = 0, shiftCash = 0, shiftUdhaar = 0;
@@ -419,7 +443,6 @@
             location.reload();
         }
 
-        // --- Monthly & Yearly Sync ---
         function setQuickDates() {
             let month = document.getElementById("repMonthSelect").value;
             let year = document.getElementById("repYearSelect").value || new Date().getFullYear();
@@ -434,7 +457,6 @@
             }
         }
 
-        // --- Counter Operations ---
         function manualSearch() {
             let val = document.getElementById("barcodeInput").value.toLowerCase().trim();
             if(val === "") return;
@@ -522,14 +544,11 @@
                 return alert("Udhaar ke liye Customer ka Mobile Number likhna zaroori hai!");
             }
 
-            // Deduct Stock and update Sold analytics tracks
             cart.forEach(c => {
                 let p = products.find(prod => prod.id === c.id);
                 if(p) {
-                    if(p.bought === undefined) p.bought = parseInt(p.qty || 0);
-                    if(p.sold === undefined) p.sold = 0;
-                    p.qty -= c.qty;
-                    p.sold += c.qty;
+                    p.sold = (parseInt(p.sold) || 0) + parseInt(c.qty);
+                    p.qty = (parseInt(p.bought) || 0) - p.sold;
                 }
             });
 
@@ -569,7 +588,6 @@
             if(currentUser === "Admin") updateAdminDashboard();
         }
 
-        // --- Admin Dashboard Engine ---
         function switchAdminTab(tab) {
             document.querySelectorAll('.admin-tab').forEach(el => el.style.display = 'none');
             document.getElementById('tab-' + tab).style.display = 'block';
@@ -587,9 +605,6 @@
             
             let sHtml = "";
             products.forEach((p, i) => {
-                if(p.bought === undefined) p.bought = parseInt(p.qty || 0);
-                if(p.sold === undefined) p.sold = 0;
-
                 tStockQty += parseInt(p.qty || 0);
                 let rowClass = (p.qty <= p.lowAlert) ? 'low-stock' : '';
                 sHtml += `<tr class="${rowClass}">
@@ -643,9 +658,6 @@
 
         function openEditSection(i) {
             let p = products[i];
-            if(p.bought === undefined) p.bought = parseInt(p.qty || 0);
-            if(p.sold === undefined) p.sold = 0;
-
             document.getElementById("editProdIndex").value = i;
             document.getElementById("editProdName").value = p.name;
             document.getElementById("editProdCost").value = p.cost;
@@ -690,9 +702,8 @@
         function addMoreStock(i) {
             let q = prompt("Kitna naya stock aya hai?");
             if(q && !isNaN(q)) { 
-                if(products[i].bought === undefined) products[i].bought = parseInt(products[i].qty || 0);
-                products[i].qty += parseInt(q); 
-                products[i].bought += parseInt(q); 
+                products[i].bought = (parseInt(products[i].bought) || 0) + parseInt(q); 
+                products[i].qty = products[i].bought - (parseInt(products[i].sold) || 0);
                 saveDB(); 
                 updateAdminDashboard(); 
             }
